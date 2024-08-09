@@ -5,52 +5,60 @@
 use crate::attribute::MoleculeAttribute;
 use crate::error::{Error, Result};
 use alloc::vec::Vec;
-use serde::ser::{self, Serialize};
+use serde::ser::{self, Serialize, SerializeTuple};
 
 /// A structure for serializing Rust values into molecule.
-pub struct Serializer {
+pub struct MoleculeSerializer {
     //
     // The molecule format requires a header before the body. It should output
     // the body first, then the header. We can't gain any benefit from utilizing the
     // "Write" trait since it is sequential.
     data: Vec<u8>,
+
     //
-    // When a type is define as "newtype struct", e.g.
-    // ```struct DataArray(Vec<u8>);```
-    // It is treated as `fixvec`. Otherwise, any type like Vec<T> is processed as `dynvec`
-    // see https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0008-serialization/0008-serialization.md#vectors
-    enable_fixvec: bool,
+    // true if the rust `struct` is mapping to molecule struct.
+    // By default, all rust `struct` is mapping to molecule table.
+    is_struct: bool,
 }
 
-impl Serializer {
+impl MoleculeSerializer {
     /// Creates a new molecule serializer.    
-    pub fn new() -> Self {
-        Serializer {
+    pub fn new(is_struct: bool) -> Self {
+        MoleculeSerializer {
             data: vec![],
-            enable_fixvec: false,
+            is_struct,
         }
     }
 }
 
-impl Serializer {
+impl MoleculeSerializer {
     pub fn to_vec(self) -> Vec<u8> {
         self.data
     }
     pub fn extend<I: IntoIterator<Item = u8>>(&mut self, iter: I) {
         self.data.extend(iter.into_iter());
     }
+    pub fn is_struct(&self) -> bool {
+        self.is_struct
+    }
 }
 
-impl<'a> ser::Serializer for &'a mut Serializer {
+// dummy
+pub struct Compound<'a> {
+    ser: &'a mut MoleculeSerializer,
+}
+
+impl<'a> ser::Serializer for &'a mut MoleculeSerializer {
     type Ok = ();
     type Error = Error;
 
-    type SerializeSeq = Compound<'a>;
-    type SerializeTuple = Compound<'a>;
+    type SerializeSeq = FixVec<'a>;
+    type SerializeTuple = Tuple<'a>;
+    type SerializeStruct = Table<'a>;
+    // not implemented
     type SerializeTupleStruct = Compound<'a>;
     type SerializeTupleVariant = Compound<'a>;
     type SerializeMap = Compound<'a>;
-    type SerializeStruct = Compound<'a>;
     type SerializeStructVariant = Compound<'a>;
 
     fn serialize_bool(self, value: bool) -> Result<()> {
@@ -171,7 +179,6 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     where
         T: ?Sized + Serialize,
     {
-        self.enable_fixvec = true;
         value.serialize(self)
     }
 
@@ -200,11 +207,11 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     }
 
     fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq> {
-        Ok(Compound::new_vec(self))
+        Ok(FixVec::new(self))
     }
 
     fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple> {
-        unimplemented!()
+        Ok(Tuple::new(self))
     }
 
     fn serialize_tuple_struct(
@@ -231,7 +238,8 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     }
 
     fn serialize_struct(self, _name: &'static str, len: usize) -> Result<Self::SerializeStruct> {
-        Ok(Compound::new_table(self, len))
+        // In molecule struct, the inner fields must be molecule struct.
+        Ok(Table::new(self, len, self.is_struct()))
     }
 
     fn serialize_struct_variant(
@@ -245,85 +253,107 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     }
 }
 
-pub enum Compound<'a> {
-    Table {
-        ser: &'a mut Serializer,
-        parts: Vec<Vec<u8>>,
-        len: usize,
-    },
-    Vec {
-        ser: &'a mut Serializer,
-        parts: Vec<Vec<u8>>,
-    },
+pub struct FixVec<'a> {
+    ser: &'a mut MoleculeSerializer,
+    parts: Vec<Vec<u8>>,
 }
 
-impl<'a> Compound<'a> {
-    pub fn new_table(ser: &'a mut Serializer, len: usize) -> Self {
-        Compound::Table {
+impl<'a> FixVec<'a> {
+    pub fn new(ser: &'a mut MoleculeSerializer) -> Self {
+        FixVec { ser, parts: vec![] }
+    }
+}
+
+impl<'a> ser::SerializeSeq for FixVec<'a> {
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_element<T>(&mut self, value: &T) -> Result<()>
+    where
+        T: ?Sized + Serialize,
+    {
+        self.parts.push(to_vec(value, true)?);
+        Ok(())
+    }
+
+    fn end(self) -> Result<()> {
+        self.ser.extend(assemble_table(self.parts));
+        Ok(())
+    }
+}
+
+// this tuple is used in serialization of [T; N]
+pub struct Tuple<'a> {
+    ser: &'a mut MoleculeSerializer,
+    data: Vec<u8>,
+}
+
+impl<'a> Tuple<'a> {
+    pub fn new(ser: &'a mut MoleculeSerializer) -> Self {
+        Self { ser, data: vec![] }
+    }
+}
+
+impl<'a> ser::SerializeTuple for Tuple<'a> {
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_element<T>(&mut self, value: &T) -> Result<()>
+    where
+        T: ?Sized + Serialize,
+    {
+        let data = to_vec(value, true)?;
+        self.data.extend(data);
+        Ok(())
+    }
+    fn end(self) -> Result<()> {
+        Ok(())
+    }
+}
+
+pub struct Table<'a> {
+    ser: &'a mut MoleculeSerializer,
+    parts: Vec<Vec<u8>>,
+    len: usize,
+    is_struct: bool,
+}
+
+impl<'a> Table<'a> {
+    pub fn new(ser: &'a mut MoleculeSerializer, len: usize, is_struct: bool) -> Self {
+        Table {
             ser,
             parts: vec![],
             len,
+            is_struct,
         }
-    }
-    // fixvec or dynvec
-    pub fn new_vec(ser: &'a mut Serializer) -> Self {
-        Compound::Vec { ser, parts: vec![] }
     }
 }
 
-impl<'a> ser::SerializeSeq for Compound<'a> {
+impl<'a> ser::SerializeStruct for Table<'a> {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_element<T>(&mut self, value: &T) -> Result<()>
+    fn serialize_field<T>(&mut self, _key: &'static str, value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        let mut serializer = Serializer::new();
-        value.serialize(&mut serializer);
-        let element = serializer.to_vec();
-        match self {
-            Compound::Vec { ser, parts } => {
-                parts.push(element);
-            }
-            _ => panic!("unknown compound enum"),
-        };
+        self.parts.push(to_vec(value, self.is_struct)?);
         Ok(())
     }
 
     fn end(self) -> Result<()> {
-        match self {
-            Compound::Vec { ser, parts } => {
-                if ser.enable_fixvec {
-                    let result = assemble_fixvec(parts);
-                    ser.extend(result);
-                } else {
-                    let result = assemble_table(parts);
-                    ser.extend(result);
-                }
-            }
-            _ => panic!("unknown compound enum"),
+        if self.is_struct {
+            let data = assemble_struct(self.parts);
+            self.ser.extend(data);
+        } else {
+            let data = assemble_table(self.parts);
+            self.ser.extend(data);
         }
         Ok(())
     }
 }
 
-impl<'a> ser::SerializeTuple for Compound<'a> {
-    type Ok = ();
-    type Error = Error;
-
-    fn serialize_element<T>(&mut self, value: &T) -> Result<()>
-    where
-        T: ?Sized + Serialize,
-    {
-        unimplemented!()
-    }
-
-    fn end(self) -> Result<()> {
-        unimplemented!()
-    }
-}
-
+// assemble molecule table or dynvec
 // https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0008-serialization/0008-serialization.md#table
 // The table is a dynamic-size type. It can be considered as a dynvec but the length is fixed.
 // The serializing steps are same as dynvec:
@@ -331,7 +361,7 @@ impl<'a> ser::SerializeTuple for Compound<'a> {
 // Serialize all offset of fields as 32 bit unsigned integer in little-endian.
 // Serialize all fields in it in the order they are declared.
 //
-fn assemble_table(parts: Vec<Vec<u8>>) -> Vec<u8> {
+pub fn assemble_table(parts: Vec<Vec<u8>>) -> Vec<u8> {
     let header_len = parts.len() + 1;
     let mut header = vec![0u32; header_len];
     let mut offset = (header_len * 4) as u32;
@@ -355,11 +385,12 @@ fn assemble_table(parts: Vec<Vec<u8>>) -> Vec<u8> {
     result
 }
 
+// assemble molecule fixvec
 // https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0008-serialization/0008-serialization.md#fixvec---fixed-vector
 // There are two steps of serializing a fixvec:
 // Serialize the length as a 32 bit unsigned integer in little-endian.
 // Serialize all items in it.
-fn assemble_fixvec(parts: Vec<Vec<u8>>) -> Vec<u8> {
+pub fn assemble_fixvec(parts: Vec<Vec<u8>>) -> Vec<u8> {
     if parts.len() > 1 {
         let len = parts[0].len();
         for item in &parts {
@@ -376,6 +407,31 @@ fn assemble_fixvec(parts: Vec<Vec<u8>>) -> Vec<u8> {
     });
     result
 }
+// assemble molecule struct
+pub fn assemble_struct(parts: Vec<Vec<u8>>) -> Vec<u8> {
+    let mut result = vec![];
+    parts.into_iter().fold(&mut result, |acc, item| {
+        acc.extend(item);
+        acc
+    });
+    result
+}
+
+/// Serialize the given data structure as a molecule byte vector.
+///
+/// is_struct: is mapping to molecule struct or not.
+/// # Errors
+///
+/// Serialization can fail if `T`'s implementation of `Serialize` decides to
+/// fail
+pub fn to_vec<T>(value: &T, is_struct: bool) -> Result<Vec<u8>>
+where
+    T: ?Sized + Serialize,
+{
+    let mut serializer = MoleculeSerializer::new(is_struct);
+    value.serialize(&mut serializer)?;
+    Ok(serializer.to_vec())
+}
 
 impl<'a> ser::SerializeTupleStruct for Compound<'a> {
     type Ok = ();
@@ -385,27 +441,11 @@ impl<'a> ser::SerializeTupleStruct for Compound<'a> {
     where
         T: ?Sized + Serialize,
     {
-        let ser = match self {
-            Compound::Table { ser, .. } => ser,
-            _ => panic!("unknown compound enum"),
-        };
-        value.serialize(&mut **ser)
+        unimplemented!()
     }
 
     fn end(self) -> Result<()> {
-        match self {
-            Compound::Table { ser, parts, len } => {
-                if len != parts.len() {
-                    return Err(Error::MismatchedLength);
-                }
-                let data = assemble_table(parts);
-                ser.extend(data);
-                Ok(())
-            }
-            _ => {
-                panic!("unknown compound enum");
-            }
-        }
+        unimplemented!()
     }
 }
 
@@ -448,40 +488,6 @@ impl<'a> ser::SerializeMap for Compound<'a> {
     }
 }
 
-impl<'a> ser::SerializeStruct for Compound<'a> {
-    type Ok = ();
-    type Error = Error;
-
-    fn serialize_field<T>(&mut self, _key: &'static str, value: &T) -> Result<()>
-    where
-        T: ?Sized + Serialize,
-    {
-        let mut ser = Serializer::new();
-        value.serialize(&mut ser)?;
-        let data = ser.to_vec();
-        match self {
-            Compound::Table { ser, parts, len } => {
-                parts.push(data);
-            }
-            _ => {
-                panic!("unknown compound enum")
-            }
-        }
-        Ok(())
-    }
-
-    fn end(self) -> Result<()> {
-        match self {
-            Compound::Table { ser, parts, len } => {
-                let data = assemble_table(parts);
-                ser.extend(data);
-            }
-            _ => panic!("unknown compound enum"),
-        }
-        Ok(())
-    }
-}
-
 impl<'a> ser::SerializeStructVariant for Compound<'a> {
     type Ok = ();
     type Error = Error;
@@ -496,19 +502,4 @@ impl<'a> ser::SerializeStructVariant for Compound<'a> {
     fn end(self) -> Result<()> {
         unimplemented!()
     }
-}
-
-/// Serialize the given data structure as a molecule byte vector.
-///
-/// # Errors
-///
-/// Serialization can fail if `T`'s implementation of `Serialize` decides to
-/// fail
-pub fn to_vec<T>(value: &T) -> Result<Vec<u8>>
-where
-    T: ?Sized + Serialize,
-{
-    let mut serializer = Serializer::new();
-    value.serialize(&mut serializer)?;
-    Ok(serializer.to_vec())
 }
