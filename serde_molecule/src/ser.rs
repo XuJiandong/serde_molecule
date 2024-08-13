@@ -308,6 +308,7 @@ impl<'a> ser::SerializeTuple for Tuple<'a> {
         Ok(())
     }
     fn end(self) -> Result<()> {
+        self.ser.extend(self.data);
         Ok(())
     }
 }

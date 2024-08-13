@@ -2,8 +2,11 @@ array U16 [byte; 2];
 array U32 [byte; 4];
 array U64 [byte; 8];
 array U128 [byte; 16];
+array Array3 [byte; 3];
+
 vector Bytes <byte>;
 vector BytesVector <Bytes>;
+option U128Opt (U128);
 
 struct Struct1 {
     f1: byte,
@@ -19,4 +22,6 @@ table Table1 {
     fixvec: Bytes,
     dynvec: BytesVector,
     struct1: Struct1,
+    option: U128Opt,
+    array3: Array3,
 }

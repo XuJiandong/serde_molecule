@@ -31,6 +31,8 @@ fn test_table1() {
         .fixvec((*old_default::DEFAULT_FIXVEC).clone())
         .dynvec((*old_default::DEFAULT_DYNVEC).clone())
         .struct1((*old_default::DEFAULT_STRUCT1).clone())
+        .option(Default::default())
+        .array3((*old_default::DEFAULT_ARRAY3).clone())
         .build();
     let new_value = NewTable1 {
         f1: new_default::DEFAULT_BYTE,
@@ -41,6 +43,8 @@ fn test_table1() {
         fixvec: (*new_default::DEFAULT_FIXVEC).clone(),
         dynvec: (*new_default::DEFAULT_DYNVEC).clone(),
         struct1: (*new_default::DEFAULT_STRUCT1).clone(),
+        option: None,
+        array3: (*new_default::DEFAULT_ARRAY3).clone(),
     };
     let old = old_value.as_slice();
     let new = to_vec(&new_value, false).unwrap();

@@ -39,4 +39,11 @@ lazy_static! {
             .f2((*DEFAULT_U16).clone())
             .build()
     };
+    pub static ref DEFAULT_ARRAY3: test1::Array3 = {
+        test1::Array3::new_builder()
+            .nth0((*DEFAULT_BYTE).clone())
+            .nth1((*DEFAULT_BYTE).clone())
+            .nth2((*DEFAULT_BYTE).clone()).build()
+    };
+
 }

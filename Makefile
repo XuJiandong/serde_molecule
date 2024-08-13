@@ -11,3 +11,5 @@ clippy:
 unit-tests:
 	cargo test
 
+mol-gen:
+	moleculec --schema-file tests/schemas/test1.mol --language rust | rustfmt > tests/src/old/test1.rs

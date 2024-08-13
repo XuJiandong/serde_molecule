@@ -20,4 +20,6 @@ pub struct Table1 {
     pub dynvec: Vec<Vec<u8>>,
     #[serde(with = "struct_serde")]
     pub struct1: Struct1,
+    pub option: Option<u128>,
+    pub array3: [u8; 3],
 }

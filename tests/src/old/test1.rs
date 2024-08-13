@@ -1227,6 +1227,242 @@ impl<'a> From<&'a U128Reader<'a>> for &'a [u8; 16usize] {
     }
 }
 #[derive(Clone)]
+pub struct Array3(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for Array3 {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl ::core::fmt::Debug for Array3 {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl ::core::fmt::Display for Array3 {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        let raw_data = hex_string(&self.raw_data());
+        write!(f, "{}(0x{})", Self::NAME, raw_data)
+    }
+}
+impl ::core::default::Default for Array3 {
+    fn default() -> Self {
+        let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
+        Array3::new_unchecked(v)
+    }
+}
+impl Array3 {
+    const DEFAULT_VALUE: [u8; 3] = [0, 0, 0];
+    pub const TOTAL_SIZE: usize = 3;
+    pub const ITEM_SIZE: usize = 1;
+    pub const ITEM_COUNT: usize = 3;
+    pub fn nth0(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(0..1))
+    }
+    pub fn nth1(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(1..2))
+    }
+    pub fn nth2(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(2..3))
+    }
+    pub fn raw_data(&self) -> molecule::bytes::Bytes {
+        self.as_bytes()
+    }
+    pub fn as_reader<'r>(&'r self) -> Array3Reader<'r> {
+        Array3Reader::new_unchecked(self.as_slice())
+    }
+}
+impl molecule::prelude::Entity for Array3 {
+    type Builder = Array3Builder;
+    const NAME: &'static str = "Array3";
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        Array3(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        Array3Reader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        Array3Reader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder().set([self.nth0(), self.nth1(), self.nth2()])
+    }
+}
+#[derive(Clone, Copy)]
+pub struct Array3Reader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for Array3Reader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl<'r> ::core::fmt::Debug for Array3Reader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl<'r> ::core::fmt::Display for Array3Reader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        let raw_data = hex_string(&self.raw_data());
+        write!(f, "{}(0x{})", Self::NAME, raw_data)
+    }
+}
+impl<'r> Array3Reader<'r> {
+    pub const TOTAL_SIZE: usize = 3;
+    pub const ITEM_SIZE: usize = 1;
+    pub const ITEM_COUNT: usize = 3;
+    pub fn nth0(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[0..1])
+    }
+    pub fn nth1(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[1..2])
+    }
+    pub fn nth2(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[2..3])
+    }
+    pub fn raw_data(&self) -> &'r [u8] {
+        self.as_slice()
+    }
+}
+impl<'r> molecule::prelude::Reader<'r> for Array3Reader<'r> {
+    type Entity = Array3;
+    const NAME: &'static str = "Array3Reader";
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        Array3Reader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
+    fn verify(slice: &[u8], _compatible: bool) -> molecule::error::VerificationResult<()> {
+        use molecule::verification_error as ve;
+        let slice_len = slice.len();
+        if slice_len != Self::TOTAL_SIZE {
+            return ve!(Self, TotalSizeNotMatch, Self::TOTAL_SIZE, slice_len);
+        }
+        Ok(())
+    }
+}
+#[derive(Clone)]
+pub struct Array3Builder(pub(crate) [Byte; 3]);
+impl ::core::fmt::Debug for Array3Builder {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:?})", Self::NAME, &self.0[..])
+    }
+}
+impl ::core::default::Default for Array3Builder {
+    fn default() -> Self {
+        Array3Builder([Byte::default(), Byte::default(), Byte::default()])
+    }
+}
+impl Array3Builder {
+    pub const TOTAL_SIZE: usize = 3;
+    pub const ITEM_SIZE: usize = 1;
+    pub const ITEM_COUNT: usize = 3;
+    pub fn set(mut self, v: [Byte; 3]) -> Self {
+        self.0 = v;
+        self
+    }
+    pub fn nth0(mut self, v: Byte) -> Self {
+        self.0[0] = v;
+        self
+    }
+    pub fn nth1(mut self, v: Byte) -> Self {
+        self.0[1] = v;
+        self
+    }
+    pub fn nth2(mut self, v: Byte) -> Self {
+        self.0[2] = v;
+        self
+    }
+}
+impl molecule::prelude::Builder for Array3Builder {
+    type Entity = Array3;
+    const NAME: &'static str = "Array3Builder";
+    fn expected_length(&self) -> usize {
+        Self::TOTAL_SIZE
+    }
+    fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
+        writer.write_all(self.0[0].as_slice())?;
+        writer.write_all(self.0[1].as_slice())?;
+        writer.write_all(self.0[2].as_slice())?;
+        Ok(())
+    }
+    fn build(&self) -> Self::Entity {
+        let mut inner = Vec::with_capacity(self.expected_length());
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        Array3::new_unchecked(inner.into())
+    }
+}
+impl From<[Byte; 3usize]> for Array3 {
+    fn from(value: [Byte; 3usize]) -> Self {
+        Self::new_builder().set(value).build()
+    }
+}
+impl ::core::convert::TryFrom<&[Byte]> for Array3 {
+    type Error = ::core::array::TryFromSliceError;
+    fn try_from(value: &[Byte]) -> Result<Self, ::core::array::TryFromSliceError> {
+        Ok(Self::new_builder()
+            .set(<&[Byte; 3usize]>::try_from(value)?.clone())
+            .build())
+    }
+}
+impl From<Array3> for [Byte; 3usize] {
+    #[track_caller]
+    fn from(value: Array3) -> Self {
+        [value.nth0(), value.nth1(), value.nth2()]
+    }
+}
+impl From<[u8; 3usize]> for Array3 {
+    fn from(value: [u8; 3usize]) -> Self {
+        Array3Reader::new_unchecked(&value).to_entity()
+    }
+}
+impl ::core::convert::TryFrom<&[u8]> for Array3 {
+    type Error = ::core::array::TryFromSliceError;
+    fn try_from(value: &[u8]) -> Result<Self, ::core::array::TryFromSliceError> {
+        Ok(<[u8; 3usize]>::try_from(value)?.into())
+    }
+}
+impl From<Array3> for [u8; 3usize] {
+    #[track_caller]
+    fn from(value: Array3) -> Self {
+        ::core::convert::TryFrom::try_from(value.as_slice()).unwrap()
+    }
+}
+impl<'a> From<Array3Reader<'a>> for &'a [u8; 3usize] {
+    #[track_caller]
+    fn from(value: Array3Reader<'a>) -> Self {
+        ::core::convert::TryFrom::try_from(value.as_slice()).unwrap()
+    }
+}
+impl<'a> From<&'a Array3Reader<'a>> for &'a [u8; 3usize] {
+    #[track_caller]
+    fn from(value: &'a Array3Reader<'a>) -> Self {
+        ::core::convert::TryFrom::try_from(value.as_slice()).unwrap()
+    }
+}
+#[derive(Clone)]
 pub struct Bytes(molecule::bytes::Bytes);
 impl ::core::fmt::LowerHex for Bytes {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -1827,6 +2063,175 @@ impl ::core::iter::FromIterator<Bytes> for BytesVector {
     }
 }
 #[derive(Clone)]
+pub struct U128Opt(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for U128Opt {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl ::core::fmt::Debug for U128Opt {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl ::core::fmt::Display for U128Opt {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        if let Some(v) = self.to_opt() {
+            write!(f, "{}(Some({}))", Self::NAME, v)
+        } else {
+            write!(f, "{}(None)", Self::NAME)
+        }
+    }
+}
+impl ::core::default::Default for U128Opt {
+    fn default() -> Self {
+        let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
+        U128Opt::new_unchecked(v)
+    }
+}
+impl U128Opt {
+    const DEFAULT_VALUE: [u8; 0] = [];
+    pub fn is_none(&self) -> bool {
+        self.0.is_empty()
+    }
+    pub fn is_some(&self) -> bool {
+        !self.0.is_empty()
+    }
+    pub fn to_opt(&self) -> Option<U128> {
+        if self.is_none() {
+            None
+        } else {
+            Some(U128::new_unchecked(self.0.clone()))
+        }
+    }
+    pub fn as_reader<'r>(&'r self) -> U128OptReader<'r> {
+        U128OptReader::new_unchecked(self.as_slice())
+    }
+}
+impl molecule::prelude::Entity for U128Opt {
+    type Builder = U128OptBuilder;
+    const NAME: &'static str = "U128Opt";
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        U128Opt(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        U128OptReader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        U128OptReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder().set(self.to_opt())
+    }
+}
+#[derive(Clone, Copy)]
+pub struct U128OptReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for U128OptReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl<'r> ::core::fmt::Debug for U128OptReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl<'r> ::core::fmt::Display for U128OptReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        if let Some(v) = self.to_opt() {
+            write!(f, "{}(Some({}))", Self::NAME, v)
+        } else {
+            write!(f, "{}(None)", Self::NAME)
+        }
+    }
+}
+impl<'r> U128OptReader<'r> {
+    pub fn is_none(&self) -> bool {
+        self.0.is_empty()
+    }
+    pub fn is_some(&self) -> bool {
+        !self.0.is_empty()
+    }
+    pub fn to_opt(&self) -> Option<U128Reader<'r>> {
+        if self.is_none() {
+            None
+        } else {
+            Some(U128Reader::new_unchecked(self.as_slice()))
+        }
+    }
+}
+impl<'r> molecule::prelude::Reader<'r> for U128OptReader<'r> {
+    type Entity = U128Opt;
+    const NAME: &'static str = "U128OptReader";
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        U128OptReader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
+    fn verify(slice: &[u8], compatible: bool) -> molecule::error::VerificationResult<()> {
+        if !slice.is_empty() {
+            U128Reader::verify(&slice[..], compatible)?;
+        }
+        Ok(())
+    }
+}
+#[derive(Clone, Debug, Default)]
+pub struct U128OptBuilder(pub(crate) Option<U128>);
+impl U128OptBuilder {
+    pub fn set(mut self, v: Option<U128>) -> Self {
+        self.0 = v;
+        self
+    }
+}
+impl molecule::prelude::Builder for U128OptBuilder {
+    type Entity = U128Opt;
+    const NAME: &'static str = "U128OptBuilder";
+    fn expected_length(&self) -> usize {
+        self.0
+            .as_ref()
+            .map(|ref inner| inner.as_slice().len())
+            .unwrap_or(0)
+    }
+    fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
+        self.0
+            .as_ref()
+            .map(|ref inner| writer.write_all(inner.as_slice()))
+            .unwrap_or(Ok(()))
+    }
+    fn build(&self) -> Self::Entity {
+        let mut inner = Vec::with_capacity(self.expected_length());
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        U128Opt::new_unchecked(inner.into())
+    }
+}
+impl From<U128> for U128Opt {
+    fn from(value: U128) -> Self {
+        Self::new_builder().set(Some(value)).build()
+    }
+}
+#[derive(Clone)]
 pub struct Struct1(molecule::bytes::Bytes);
 impl ::core::fmt::LowerHex for Struct1 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -2015,6 +2420,8 @@ impl ::core::fmt::Display for Table1 {
         write!(f, ", {}: {}", "fixvec", self.fixvec())?;
         write!(f, ", {}: {}", "dynvec", self.dynvec())?;
         write!(f, ", {}: {}", "struct1", self.struct1())?;
+        write!(f, ", {}: {}", "option", self.option())?;
+        write!(f, ", {}: {}", "array3", self.array3())?;
         let extra_count = self.count_extra_fields();
         if extra_count != 0 {
             write!(f, ", .. ({} fields)", extra_count)?;
@@ -2029,12 +2436,13 @@ impl ::core::default::Default for Table1 {
     }
 }
 impl Table1 {
-    const DEFAULT_VALUE: [u8; 78] = [
-        78, 0, 0, 0, 36, 0, 0, 0, 37, 0, 0, 0, 39, 0, 0, 0, 43, 0, 0, 0, 51, 0, 0, 0, 67, 0, 0, 0,
-        71, 0, 0, 0, 75, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0,
+    const DEFAULT_VALUE: [u8; 89] = [
+        89, 0, 0, 0, 44, 0, 0, 0, 45, 0, 0, 0, 47, 0, 0, 0, 51, 0, 0, 0, 59, 0, 0, 0, 75, 0, 0, 0,
+        79, 0, 0, 0, 83, 0, 0, 0, 86, 0, 0, 0, 86, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0,
+        0, 0,
     ];
-    pub const FIELD_COUNT: usize = 8;
+    pub const FIELD_COUNT: usize = 10;
     pub fn total_size(&self) -> usize {
         molecule::unpack_number(self.as_slice()) as usize
     }
@@ -2096,11 +2504,23 @@ impl Table1 {
     pub fn struct1(&self) -> Struct1 {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[32..]) as usize;
+        let end = molecule::unpack_number(&slice[36..]) as usize;
+        Struct1::new_unchecked(self.0.slice(start..end))
+    }
+    pub fn option(&self) -> U128Opt {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[36..]) as usize;
+        let end = molecule::unpack_number(&slice[40..]) as usize;
+        U128Opt::new_unchecked(self.0.slice(start..end))
+    }
+    pub fn array3(&self) -> Array3 {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[40..]) as usize;
         if self.has_extra_fields() {
-            let end = molecule::unpack_number(&slice[36..]) as usize;
-            Struct1::new_unchecked(self.0.slice(start..end))
+            let end = molecule::unpack_number(&slice[44..]) as usize;
+            Array3::new_unchecked(self.0.slice(start..end))
         } else {
-            Struct1::new_unchecked(self.0.slice(start..))
+            Array3::new_unchecked(self.0.slice(start..))
         }
     }
     pub fn as_reader<'r>(&'r self) -> Table1Reader<'r> {
@@ -2138,6 +2558,8 @@ impl molecule::prelude::Entity for Table1 {
             .fixvec(self.fixvec())
             .dynvec(self.dynvec())
             .struct1(self.struct1())
+            .option(self.option())
+            .array3(self.array3())
     }
 }
 #[derive(Clone, Copy)]
@@ -2167,6 +2589,8 @@ impl<'r> ::core::fmt::Display for Table1Reader<'r> {
         write!(f, ", {}: {}", "fixvec", self.fixvec())?;
         write!(f, ", {}: {}", "dynvec", self.dynvec())?;
         write!(f, ", {}: {}", "struct1", self.struct1())?;
+        write!(f, ", {}: {}", "option", self.option())?;
+        write!(f, ", {}: {}", "array3", self.array3())?;
         let extra_count = self.count_extra_fields();
         if extra_count != 0 {
             write!(f, ", .. ({} fields)", extra_count)?;
@@ -2175,7 +2599,7 @@ impl<'r> ::core::fmt::Display for Table1Reader<'r> {
     }
 }
 impl<'r> Table1Reader<'r> {
-    pub const FIELD_COUNT: usize = 8;
+    pub const FIELD_COUNT: usize = 10;
     pub fn total_size(&self) -> usize {
         molecule::unpack_number(self.as_slice()) as usize
     }
@@ -2237,11 +2661,23 @@ impl<'r> Table1Reader<'r> {
     pub fn struct1(&self) -> Struct1Reader<'r> {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[32..]) as usize;
+        let end = molecule::unpack_number(&slice[36..]) as usize;
+        Struct1Reader::new_unchecked(&self.as_slice()[start..end])
+    }
+    pub fn option(&self) -> U128OptReader<'r> {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[36..]) as usize;
+        let end = molecule::unpack_number(&slice[40..]) as usize;
+        U128OptReader::new_unchecked(&self.as_slice()[start..end])
+    }
+    pub fn array3(&self) -> Array3Reader<'r> {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[40..]) as usize;
         if self.has_extra_fields() {
-            let end = molecule::unpack_number(&slice[36..]) as usize;
-            Struct1Reader::new_unchecked(&self.as_slice()[start..end])
+            let end = molecule::unpack_number(&slice[44..]) as usize;
+            Array3Reader::new_unchecked(&self.as_slice()[start..end])
         } else {
-            Struct1Reader::new_unchecked(&self.as_slice()[start..])
+            Array3Reader::new_unchecked(&self.as_slice()[start..])
         }
     }
 }
@@ -2299,6 +2735,8 @@ impl<'r> molecule::prelude::Reader<'r> for Table1Reader<'r> {
         BytesReader::verify(&slice[offsets[5]..offsets[6]], compatible)?;
         BytesVectorReader::verify(&slice[offsets[6]..offsets[7]], compatible)?;
         Struct1Reader::verify(&slice[offsets[7]..offsets[8]], compatible)?;
+        U128OptReader::verify(&slice[offsets[8]..offsets[9]], compatible)?;
+        Array3Reader::verify(&slice[offsets[9]..offsets[10]], compatible)?;
         Ok(())
     }
 }
@@ -2312,9 +2750,11 @@ pub struct Table1Builder {
     pub(crate) fixvec: Bytes,
     pub(crate) dynvec: BytesVector,
     pub(crate) struct1: Struct1,
+    pub(crate) option: U128Opt,
+    pub(crate) array3: Array3,
 }
 impl Table1Builder {
-    pub const FIELD_COUNT: usize = 8;
+    pub const FIELD_COUNT: usize = 10;
     pub fn f1(mut self, v: Byte) -> Self {
         self.f1 = v;
         self
@@ -2347,6 +2787,14 @@ impl Table1Builder {
         self.struct1 = v;
         self
     }
+    pub fn option(mut self, v: U128Opt) -> Self {
+        self.option = v;
+        self
+    }
+    pub fn array3(mut self, v: Array3) -> Self {
+        self.array3 = v;
+        self
+    }
 }
 impl molecule::prelude::Builder for Table1Builder {
     type Entity = Table1;
@@ -2361,6 +2809,8 @@ impl molecule::prelude::Builder for Table1Builder {
             + self.fixvec.as_slice().len()
             + self.dynvec.as_slice().len()
             + self.struct1.as_slice().len()
+            + self.option.as_slice().len()
+            + self.array3.as_slice().len()
     }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
         let mut total_size = molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1);
@@ -2381,6 +2831,10 @@ impl molecule::prelude::Builder for Table1Builder {
         total_size += self.dynvec.as_slice().len();
         offsets.push(total_size);
         total_size += self.struct1.as_slice().len();
+        offsets.push(total_size);
+        total_size += self.option.as_slice().len();
+        offsets.push(total_size);
+        total_size += self.array3.as_slice().len();
         writer.write_all(&molecule::pack_number(total_size as molecule::Number))?;
         for offset in offsets.into_iter() {
             writer.write_all(&molecule::pack_number(offset as molecule::Number))?;
@@ -2393,6 +2847,8 @@ impl molecule::prelude::Builder for Table1Builder {
         writer.write_all(self.fixvec.as_slice())?;
         writer.write_all(self.dynvec.as_slice())?;
         writer.write_all(self.struct1.as_slice())?;
+        writer.write_all(self.option.as_slice())?;
+        writer.write_all(self.array3.as_slice())?;
         Ok(())
     }
     fn build(&self) -> Self::Entity {
