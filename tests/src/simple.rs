@@ -52,3 +52,18 @@ fn test_table1() {
     let new = to_vec(&new_value, false).unwrap();
     assert_eq!(old, new.as_slice());
 }
+
+#[test]
+fn test_enum() {
+    use crate::new::test1::Enum1 as NewEnum1;
+    use crate::old::test1::Enum1 as OldEnum1;
+    use crate::old::test1::Enum1Union;
+
+    let old_value: OldEnum1 = OldEnum1::new_builder()
+        .set(Enum1Union::U16((*old_default::DEFAULT_U16).clone()))
+        .build();
+    let new_value: NewEnum1 = NewEnum1::U16(new_default::DEFAULT_U16);
+    let old = old_value.as_slice();
+    let new = to_vec(&new_value, false).unwrap();
+    assert_eq!(old, new.as_slice());
+}

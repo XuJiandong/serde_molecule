@@ -24,3 +24,9 @@ pub struct Table1 {
     pub array3: [u8; 3],
     pub string: String,
 }
+
+#[derive(Serialize)]
+pub enum Enum1 {
+    U16(u16),
+    U32(u32),
+}

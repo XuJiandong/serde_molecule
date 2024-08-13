@@ -3138,3 +3138,308 @@ impl molecule::prelude::Builder for Table1Builder {
         Table1::new_unchecked(inner.into())
     }
 }
+#[derive(Clone)]
+pub struct Enum1(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for Enum1 {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl ::core::fmt::Debug for Enum1 {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl ::core::fmt::Display for Enum1 {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}(", Self::NAME)?;
+        self.to_enum().display_inner(f)?;
+        write!(f, ")")
+    }
+}
+impl ::core::default::Default for Enum1 {
+    fn default() -> Self {
+        let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
+        Enum1::new_unchecked(v)
+    }
+}
+impl Enum1 {
+    const DEFAULT_VALUE: [u8; 6] = [0, 0, 0, 0, 0, 0];
+    pub const ITEMS_COUNT: usize = 2;
+    pub fn item_id(&self) -> molecule::Number {
+        molecule::unpack_number(self.as_slice())
+    }
+    pub fn to_enum(&self) -> Enum1Union {
+        let inner = self.0.slice(molecule::NUMBER_SIZE..);
+        match self.item_id() {
+            0 => U16::new_unchecked(inner).into(),
+            1 => U32::new_unchecked(inner).into(),
+            _ => panic!("{}: invalid data", Self::NAME),
+        }
+    }
+    pub fn as_reader<'r>(&'r self) -> Enum1Reader<'r> {
+        Enum1Reader::new_unchecked(self.as_slice())
+    }
+}
+impl molecule::prelude::Entity for Enum1 {
+    type Builder = Enum1Builder;
+    const NAME: &'static str = "Enum1";
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        Enum1(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        Enum1Reader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        Enum1Reader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder().set(self.to_enum())
+    }
+}
+#[derive(Clone, Copy)]
+pub struct Enum1Reader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for Enum1Reader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl<'r> ::core::fmt::Debug for Enum1Reader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl<'r> ::core::fmt::Display for Enum1Reader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}(", Self::NAME)?;
+        self.to_enum().display_inner(f)?;
+        write!(f, ")")
+    }
+}
+impl<'r> Enum1Reader<'r> {
+    pub const ITEMS_COUNT: usize = 2;
+    pub fn item_id(&self) -> molecule::Number {
+        molecule::unpack_number(self.as_slice())
+    }
+    pub fn to_enum(&self) -> Enum1UnionReader<'r> {
+        let inner = &self.as_slice()[molecule::NUMBER_SIZE..];
+        match self.item_id() {
+            0 => U16Reader::new_unchecked(inner).into(),
+            1 => U32Reader::new_unchecked(inner).into(),
+            _ => panic!("{}: invalid data", Self::NAME),
+        }
+    }
+}
+impl<'r> molecule::prelude::Reader<'r> for Enum1Reader<'r> {
+    type Entity = Enum1;
+    const NAME: &'static str = "Enum1Reader";
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        Enum1Reader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
+    fn verify(slice: &[u8], compatible: bool) -> molecule::error::VerificationResult<()> {
+        use molecule::verification_error as ve;
+        let slice_len = slice.len();
+        if slice_len < molecule::NUMBER_SIZE {
+            return ve!(Self, HeaderIsBroken, molecule::NUMBER_SIZE, slice_len);
+        }
+        let item_id = molecule::unpack_number(slice);
+        let inner_slice = &slice[molecule::NUMBER_SIZE..];
+        match item_id {
+            0 => U16Reader::verify(inner_slice, compatible),
+            1 => U32Reader::verify(inner_slice, compatible),
+            _ => ve!(Self, UnknownItem, Self::ITEMS_COUNT, item_id),
+        }?;
+        Ok(())
+    }
+}
+#[derive(Clone, Debug, Default)]
+pub struct Enum1Builder(pub(crate) Enum1Union);
+impl Enum1Builder {
+    pub const ITEMS_COUNT: usize = 2;
+    pub fn set<I>(mut self, v: I) -> Self
+    where
+        I: ::core::convert::Into<Enum1Union>,
+    {
+        self.0 = v.into();
+        self
+    }
+}
+impl molecule::prelude::Builder for Enum1Builder {
+    type Entity = Enum1;
+    const NAME: &'static str = "Enum1Builder";
+    fn expected_length(&self) -> usize {
+        molecule::NUMBER_SIZE + self.0.as_slice().len()
+    }
+    fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
+        writer.write_all(&molecule::pack_number(self.0.item_id()))?;
+        writer.write_all(self.0.as_slice())
+    }
+    fn build(&self) -> Self::Entity {
+        let mut inner = Vec::with_capacity(self.expected_length());
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        Enum1::new_unchecked(inner.into())
+    }
+}
+#[derive(Debug, Clone)]
+pub enum Enum1Union {
+    U16(U16),
+    U32(U32),
+}
+#[derive(Debug, Clone, Copy)]
+pub enum Enum1UnionReader<'r> {
+    U16(U16Reader<'r>),
+    U32(U32Reader<'r>),
+}
+impl ::core::default::Default for Enum1Union {
+    fn default() -> Self {
+        Enum1Union::U16(::core::default::Default::default())
+    }
+}
+impl ::core::fmt::Display for Enum1Union {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        match self {
+            Enum1Union::U16(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, U16::NAME, item)
+            }
+            Enum1Union::U32(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, U32::NAME, item)
+            }
+        }
+    }
+}
+impl<'r> ::core::fmt::Display for Enum1UnionReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        match self {
+            Enum1UnionReader::U16(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, U16::NAME, item)
+            }
+            Enum1UnionReader::U32(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, U32::NAME, item)
+            }
+        }
+    }
+}
+impl Enum1Union {
+    pub(crate) fn display_inner(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        match self {
+            Enum1Union::U16(ref item) => write!(f, "{}", item),
+            Enum1Union::U32(ref item) => write!(f, "{}", item),
+        }
+    }
+}
+impl<'r> Enum1UnionReader<'r> {
+    pub(crate) fn display_inner(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        match self {
+            Enum1UnionReader::U16(ref item) => write!(f, "{}", item),
+            Enum1UnionReader::U32(ref item) => write!(f, "{}", item),
+        }
+    }
+}
+impl ::core::convert::From<U16> for Enum1Union {
+    fn from(item: U16) -> Self {
+        Enum1Union::U16(item)
+    }
+}
+impl ::core::convert::From<U32> for Enum1Union {
+    fn from(item: U32) -> Self {
+        Enum1Union::U32(item)
+    }
+}
+impl<'r> ::core::convert::From<U16Reader<'r>> for Enum1UnionReader<'r> {
+    fn from(item: U16Reader<'r>) -> Self {
+        Enum1UnionReader::U16(item)
+    }
+}
+impl<'r> ::core::convert::From<U32Reader<'r>> for Enum1UnionReader<'r> {
+    fn from(item: U32Reader<'r>) -> Self {
+        Enum1UnionReader::U32(item)
+    }
+}
+impl Enum1Union {
+    pub const NAME: &'static str = "Enum1Union";
+    pub fn as_bytes(&self) -> molecule::bytes::Bytes {
+        match self {
+            Enum1Union::U16(item) => item.as_bytes(),
+            Enum1Union::U32(item) => item.as_bytes(),
+        }
+    }
+    pub fn as_slice(&self) -> &[u8] {
+        match self {
+            Enum1Union::U16(item) => item.as_slice(),
+            Enum1Union::U32(item) => item.as_slice(),
+        }
+    }
+    pub fn item_id(&self) -> molecule::Number {
+        match self {
+            Enum1Union::U16(_) => 0,
+            Enum1Union::U32(_) => 1,
+        }
+    }
+    pub fn item_name(&self) -> &str {
+        match self {
+            Enum1Union::U16(_) => "U16",
+            Enum1Union::U32(_) => "U32",
+        }
+    }
+    pub fn as_reader<'r>(&'r self) -> Enum1UnionReader<'r> {
+        match self {
+            Enum1Union::U16(item) => item.as_reader().into(),
+            Enum1Union::U32(item) => item.as_reader().into(),
+        }
+    }
+}
+impl<'r> Enum1UnionReader<'r> {
+    pub const NAME: &'r str = "Enum1UnionReader";
+    pub fn as_slice(&self) -> &'r [u8] {
+        match self {
+            Enum1UnionReader::U16(item) => item.as_slice(),
+            Enum1UnionReader::U32(item) => item.as_slice(),
+        }
+    }
+    pub fn item_id(&self) -> molecule::Number {
+        match self {
+            Enum1UnionReader::U16(_) => 0,
+            Enum1UnionReader::U32(_) => 1,
+        }
+    }
+    pub fn item_name(&self) -> &str {
+        match self {
+            Enum1UnionReader::U16(_) => "U16",
+            Enum1UnionReader::U32(_) => "U32",
+        }
+    }
+}
+impl From<U16> for Enum1 {
+    fn from(value: U16) -> Self {
+        Self::new_builder().set(value).build()
+    }
+}
+impl From<U32> for Enum1 {
+    fn from(value: U32) -> Self {
+        Self::new_builder().set(value).build()
+    }
+}

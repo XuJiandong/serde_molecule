@@ -28,3 +28,9 @@ table Table1 {
     array3: Array3,
     string: String,
 }
+
+union Enum1 {
+    U16,
+    U32,
+}
+
