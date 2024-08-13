@@ -22,4 +22,5 @@ pub struct Table1 {
     pub struct1: Struct1,
     pub option: Option<u128>,
     pub array3: [u8; 3],
+    pub string: String,
 }

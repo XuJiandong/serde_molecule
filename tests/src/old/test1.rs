@@ -2232,6 +2232,261 @@ impl From<U128> for U128Opt {
     }
 }
 #[derive(Clone)]
+pub struct String(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for String {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl ::core::fmt::Debug for String {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl ::core::fmt::Display for String {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        let raw_data = hex_string(&self.raw_data());
+        write!(f, "{}(0x{})", Self::NAME, raw_data)
+    }
+}
+impl ::core::default::Default for String {
+    fn default() -> Self {
+        let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
+        String::new_unchecked(v)
+    }
+}
+impl String {
+    const DEFAULT_VALUE: [u8; 4] = [0, 0, 0, 0];
+    pub const ITEM_SIZE: usize = 1;
+    pub fn total_size(&self) -> usize {
+        molecule::NUMBER_SIZE + Self::ITEM_SIZE * self.item_count()
+    }
+    pub fn item_count(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn len(&self) -> usize {
+        self.item_count()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+    pub fn get(&self, idx: usize) -> Option<Byte> {
+        if idx >= self.len() {
+            None
+        } else {
+            Some(self.get_unchecked(idx))
+        }
+    }
+    pub fn get_unchecked(&self, idx: usize) -> Byte {
+        let start = molecule::NUMBER_SIZE + Self::ITEM_SIZE * idx;
+        let end = start + Self::ITEM_SIZE;
+        Byte::new_unchecked(self.0.slice(start..end))
+    }
+    pub fn raw_data(&self) -> molecule::bytes::Bytes {
+        self.0.slice(molecule::NUMBER_SIZE..)
+    }
+    pub fn as_reader<'r>(&'r self) -> StringReader<'r> {
+        StringReader::new_unchecked(self.as_slice())
+    }
+}
+impl molecule::prelude::Entity for String {
+    type Builder = StringBuilder;
+    const NAME: &'static str = "String";
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        String(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        StringReader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        StringReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder().extend(self.into_iter())
+    }
+}
+#[derive(Clone, Copy)]
+pub struct StringReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for StringReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl<'r> ::core::fmt::Debug for StringReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl<'r> ::core::fmt::Display for StringReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        let raw_data = hex_string(&self.raw_data());
+        write!(f, "{}(0x{})", Self::NAME, raw_data)
+    }
+}
+impl<'r> StringReader<'r> {
+    pub const ITEM_SIZE: usize = 1;
+    pub fn total_size(&self) -> usize {
+        molecule::NUMBER_SIZE + Self::ITEM_SIZE * self.item_count()
+    }
+    pub fn item_count(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn len(&self) -> usize {
+        self.item_count()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+    pub fn get(&self, idx: usize) -> Option<ByteReader<'r>> {
+        if idx >= self.len() {
+            None
+        } else {
+            Some(self.get_unchecked(idx))
+        }
+    }
+    pub fn get_unchecked(&self, idx: usize) -> ByteReader<'r> {
+        let start = molecule::NUMBER_SIZE + Self::ITEM_SIZE * idx;
+        let end = start + Self::ITEM_SIZE;
+        ByteReader::new_unchecked(&self.as_slice()[start..end])
+    }
+    pub fn raw_data(&self) -> &'r [u8] {
+        &self.as_slice()[molecule::NUMBER_SIZE..]
+    }
+}
+impl<'r> molecule::prelude::Reader<'r> for StringReader<'r> {
+    type Entity = String;
+    const NAME: &'static str = "StringReader";
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        StringReader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
+    fn verify(slice: &[u8], _compatible: bool) -> molecule::error::VerificationResult<()> {
+        use molecule::verification_error as ve;
+        let slice_len = slice.len();
+        if slice_len < molecule::NUMBER_SIZE {
+            return ve!(Self, HeaderIsBroken, molecule::NUMBER_SIZE, slice_len);
+        }
+        let item_count = molecule::unpack_number(slice) as usize;
+        if item_count == 0 {
+            if slice_len != molecule::NUMBER_SIZE {
+                return ve!(Self, TotalSizeNotMatch, molecule::NUMBER_SIZE, slice_len);
+            }
+            return Ok(());
+        }
+        let total_size = molecule::NUMBER_SIZE + Self::ITEM_SIZE * item_count;
+        if slice_len != total_size {
+            return ve!(Self, TotalSizeNotMatch, total_size, slice_len);
+        }
+        Ok(())
+    }
+}
+#[derive(Clone, Debug, Default)]
+pub struct StringBuilder(pub(crate) Vec<Byte>);
+impl StringBuilder {
+    pub const ITEM_SIZE: usize = 1;
+    pub fn set(mut self, v: Vec<Byte>) -> Self {
+        self.0 = v;
+        self
+    }
+    pub fn push(mut self, v: Byte) -> Self {
+        self.0.push(v);
+        self
+    }
+    pub fn extend<T: ::core::iter::IntoIterator<Item = Byte>>(mut self, iter: T) -> Self {
+        for elem in iter {
+            self.0.push(elem);
+        }
+        self
+    }
+    pub fn replace(&mut self, index: usize, v: Byte) -> Option<Byte> {
+        self.0
+            .get_mut(index)
+            .map(|item| ::core::mem::replace(item, v))
+    }
+}
+impl molecule::prelude::Builder for StringBuilder {
+    type Entity = String;
+    const NAME: &'static str = "StringBuilder";
+    fn expected_length(&self) -> usize {
+        molecule::NUMBER_SIZE + Self::ITEM_SIZE * self.0.len()
+    }
+    fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
+        writer.write_all(&molecule::pack_number(self.0.len() as molecule::Number))?;
+        for inner in &self.0[..] {
+            writer.write_all(inner.as_slice())?;
+        }
+        Ok(())
+    }
+    fn build(&self) -> Self::Entity {
+        let mut inner = Vec::with_capacity(self.expected_length());
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        String::new_unchecked(inner.into())
+    }
+}
+pub struct StringIterator(String, usize, usize);
+impl ::core::iter::Iterator for StringIterator {
+    type Item = Byte;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.1 >= self.2 {
+            None
+        } else {
+            let ret = self.0.get_unchecked(self.1);
+            self.1 += 1;
+            Some(ret)
+        }
+    }
+}
+impl ::core::iter::ExactSizeIterator for StringIterator {
+    fn len(&self) -> usize {
+        self.2 - self.1
+    }
+}
+impl ::core::iter::IntoIterator for String {
+    type Item = Byte;
+    type IntoIter = StringIterator;
+    fn into_iter(self) -> Self::IntoIter {
+        let len = self.len();
+        StringIterator(self, 0, len)
+    }
+}
+impl ::core::iter::FromIterator<Byte> for String {
+    fn from_iter<T: IntoIterator<Item = Byte>>(iter: T) -> Self {
+        Self::new_builder().extend(iter).build()
+    }
+}
+impl ::core::iter::FromIterator<u8> for String {
+    fn from_iter<T: IntoIterator<Item = u8>>(iter: T) -> Self {
+        Self::new_builder()
+            .extend(iter.into_iter().map(Into::into))
+            .build()
+    }
+}
+#[derive(Clone)]
 pub struct Struct1(molecule::bytes::Bytes);
 impl ::core::fmt::LowerHex for Struct1 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -2422,6 +2677,7 @@ impl ::core::fmt::Display for Table1 {
         write!(f, ", {}: {}", "struct1", self.struct1())?;
         write!(f, ", {}: {}", "option", self.option())?;
         write!(f, ", {}: {}", "array3", self.array3())?;
+        write!(f, ", {}: {}", "string", self.string())?;
         let extra_count = self.count_extra_fields();
         if extra_count != 0 {
             write!(f, ", .. ({} fields)", extra_count)?;
@@ -2436,13 +2692,13 @@ impl ::core::default::Default for Table1 {
     }
 }
 impl Table1 {
-    const DEFAULT_VALUE: [u8; 89] = [
-        89, 0, 0, 0, 44, 0, 0, 0, 45, 0, 0, 0, 47, 0, 0, 0, 51, 0, 0, 0, 59, 0, 0, 0, 75, 0, 0, 0,
-        79, 0, 0, 0, 83, 0, 0, 0, 86, 0, 0, 0, 86, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0,
-        0, 0,
+    const DEFAULT_VALUE: [u8; 97] = [
+        97, 0, 0, 0, 48, 0, 0, 0, 49, 0, 0, 0, 51, 0, 0, 0, 55, 0, 0, 0, 63, 0, 0, 0, 79, 0, 0, 0,
+        83, 0, 0, 0, 87, 0, 0, 0, 90, 0, 0, 0, 90, 0, 0, 0, 93, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
-    pub const FIELD_COUNT: usize = 10;
+    pub const FIELD_COUNT: usize = 11;
     pub fn total_size(&self) -> usize {
         molecule::unpack_number(self.as_slice()) as usize
     }
@@ -2516,11 +2772,17 @@ impl Table1 {
     pub fn array3(&self) -> Array3 {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[40..]) as usize;
+        let end = molecule::unpack_number(&slice[44..]) as usize;
+        Array3::new_unchecked(self.0.slice(start..end))
+    }
+    pub fn string(&self) -> String {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[44..]) as usize;
         if self.has_extra_fields() {
-            let end = molecule::unpack_number(&slice[44..]) as usize;
-            Array3::new_unchecked(self.0.slice(start..end))
+            let end = molecule::unpack_number(&slice[48..]) as usize;
+            String::new_unchecked(self.0.slice(start..end))
         } else {
-            Array3::new_unchecked(self.0.slice(start..))
+            String::new_unchecked(self.0.slice(start..))
         }
     }
     pub fn as_reader<'r>(&'r self) -> Table1Reader<'r> {
@@ -2560,6 +2822,7 @@ impl molecule::prelude::Entity for Table1 {
             .struct1(self.struct1())
             .option(self.option())
             .array3(self.array3())
+            .string(self.string())
     }
 }
 #[derive(Clone, Copy)]
@@ -2591,6 +2854,7 @@ impl<'r> ::core::fmt::Display for Table1Reader<'r> {
         write!(f, ", {}: {}", "struct1", self.struct1())?;
         write!(f, ", {}: {}", "option", self.option())?;
         write!(f, ", {}: {}", "array3", self.array3())?;
+        write!(f, ", {}: {}", "string", self.string())?;
         let extra_count = self.count_extra_fields();
         if extra_count != 0 {
             write!(f, ", .. ({} fields)", extra_count)?;
@@ -2599,7 +2863,7 @@ impl<'r> ::core::fmt::Display for Table1Reader<'r> {
     }
 }
 impl<'r> Table1Reader<'r> {
-    pub const FIELD_COUNT: usize = 10;
+    pub const FIELD_COUNT: usize = 11;
     pub fn total_size(&self) -> usize {
         molecule::unpack_number(self.as_slice()) as usize
     }
@@ -2673,11 +2937,17 @@ impl<'r> Table1Reader<'r> {
     pub fn array3(&self) -> Array3Reader<'r> {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[40..]) as usize;
+        let end = molecule::unpack_number(&slice[44..]) as usize;
+        Array3Reader::new_unchecked(&self.as_slice()[start..end])
+    }
+    pub fn string(&self) -> StringReader<'r> {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[44..]) as usize;
         if self.has_extra_fields() {
-            let end = molecule::unpack_number(&slice[44..]) as usize;
-            Array3Reader::new_unchecked(&self.as_slice()[start..end])
+            let end = molecule::unpack_number(&slice[48..]) as usize;
+            StringReader::new_unchecked(&self.as_slice()[start..end])
         } else {
-            Array3Reader::new_unchecked(&self.as_slice()[start..])
+            StringReader::new_unchecked(&self.as_slice()[start..])
         }
     }
 }
@@ -2737,6 +3007,7 @@ impl<'r> molecule::prelude::Reader<'r> for Table1Reader<'r> {
         Struct1Reader::verify(&slice[offsets[7]..offsets[8]], compatible)?;
         U128OptReader::verify(&slice[offsets[8]..offsets[9]], compatible)?;
         Array3Reader::verify(&slice[offsets[9]..offsets[10]], compatible)?;
+        StringReader::verify(&slice[offsets[10]..offsets[11]], compatible)?;
         Ok(())
     }
 }
@@ -2752,9 +3023,10 @@ pub struct Table1Builder {
     pub(crate) struct1: Struct1,
     pub(crate) option: U128Opt,
     pub(crate) array3: Array3,
+    pub(crate) string: String,
 }
 impl Table1Builder {
-    pub const FIELD_COUNT: usize = 10;
+    pub const FIELD_COUNT: usize = 11;
     pub fn f1(mut self, v: Byte) -> Self {
         self.f1 = v;
         self
@@ -2795,6 +3067,10 @@ impl Table1Builder {
         self.array3 = v;
         self
     }
+    pub fn string(mut self, v: String) -> Self {
+        self.string = v;
+        self
+    }
 }
 impl molecule::prelude::Builder for Table1Builder {
     type Entity = Table1;
@@ -2811,6 +3087,7 @@ impl molecule::prelude::Builder for Table1Builder {
             + self.struct1.as_slice().len()
             + self.option.as_slice().len()
             + self.array3.as_slice().len()
+            + self.string.as_slice().len()
     }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
         let mut total_size = molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1);
@@ -2835,6 +3112,8 @@ impl molecule::prelude::Builder for Table1Builder {
         total_size += self.option.as_slice().len();
         offsets.push(total_size);
         total_size += self.array3.as_slice().len();
+        offsets.push(total_size);
+        total_size += self.string.as_slice().len();
         writer.write_all(&molecule::pack_number(total_size as molecule::Number))?;
         for offset in offsets.into_iter() {
             writer.write_all(&molecule::pack_number(offset as molecule::Number))?;
@@ -2849,6 +3128,7 @@ impl molecule::prelude::Builder for Table1Builder {
         writer.write_all(self.struct1.as_slice())?;
         writer.write_all(self.option.as_slice())?;
         writer.write_all(self.array3.as_slice())?;
+        writer.write_all(self.string.as_slice())?;
         Ok(())
     }
     fn build(&self) -> Self::Entity {

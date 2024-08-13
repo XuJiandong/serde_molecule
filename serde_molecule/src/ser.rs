@@ -147,6 +147,8 @@ impl<'a> ser::Serializer for &'a mut MoleculeSerializer {
     }
 
     fn serialize_str(self, value: &str) -> Result<()> {
+        let len = value.len() as u32;
+        self.data.extend(len.to_le_bytes());
         self.data.extend(value.as_bytes());
         Ok(())
     }

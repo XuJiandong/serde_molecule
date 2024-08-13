@@ -43,7 +43,11 @@ lazy_static! {
         test1::Array3::new_builder()
             .nth0((*DEFAULT_BYTE).clone())
             .nth1((*DEFAULT_BYTE).clone())
-            .nth2((*DEFAULT_BYTE).clone()).build()
+            .nth2((*DEFAULT_BYTE).clone())
+            .build()
     };
-
+    pub static ref DEFAULT_STRING: test1::String = {
+        let default: Vec<Byte> = vec![('c' as u8).into(), ('d' as u8).into()];
+        test1::String::new_builder().extend(default).build()
+    };
 }

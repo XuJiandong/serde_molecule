@@ -18,4 +18,5 @@ lazy_static! {
     };
     pub static ref DEFAULT_STRUCT1: Struct1 = Struct1 { f1: 0xcd, f2: 0xcd };
     pub static ref DEFAULT_ARRAY3: [u8; 3] = [0xcd, 0xcd, 0xcd];
+    pub static ref DEFAULT_STRING: String = String::from("cd");
 }

@@ -8,6 +8,8 @@ vector Bytes <byte>;
 vector BytesVector <Bytes>;
 option U128Opt (U128);
 
+vector String <byte>;
+
 struct Struct1 {
     f1: byte,
     f2: U16,
@@ -24,4 +26,5 @@ table Table1 {
     struct1: Struct1,
     option: U128Opt,
     array3: Array3,
+    string: String,
 }

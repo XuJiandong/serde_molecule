@@ -33,6 +33,7 @@ fn test_table1() {
         .struct1((*old_default::DEFAULT_STRUCT1).clone())
         .option(Default::default())
         .array3((*old_default::DEFAULT_ARRAY3).clone())
+        .string((*old_default::DEFAULT_STRING).clone())
         .build();
     let new_value = NewTable1 {
         f1: new_default::DEFAULT_BYTE,
@@ -45,6 +46,7 @@ fn test_table1() {
         struct1: (*new_default::DEFAULT_STRUCT1).clone(),
         option: None,
         array3: (*new_default::DEFAULT_ARRAY3).clone(),
+        string: (*new_default::DEFAULT_STRING).clone(),
     };
     let old = old_value.as_slice();
     let new = to_vec(&new_value, false).unwrap();
