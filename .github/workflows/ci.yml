@@ -20,8 +20,20 @@ jobs:
           toolchain: 1.75.0
           components: rustfmt
       - name: Run
-        run: cargo fmt --all -- --check
-  test-examples:
+        run: make fmt
+  clippy:
+    name: Checks / Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: 1.75.0
+          components: clippy
+      - name: Run
+        run: make clippy
+  tests:
     name: Tests / Run Examples
     runs-on: ubuntu-latest
     steps:
@@ -31,5 +43,5 @@ jobs:
         with:
           toolchain: 1.75.0
       - name: Run
-        run: cargo test
+        run: make unit-tests
 

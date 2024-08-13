@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 use hex;
 pub mod new;
 pub mod old;
