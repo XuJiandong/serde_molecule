@@ -1,16 +1,17 @@
-use crate::error;
-use crate::{ser::assemble_table, to_vec};
+use crate::molecule::assemble_table;
+use crate::to_vec;
 use serde::{Deserializer, Serialize, Serializer};
 
-pub fn serialize<T, S>(value: &[T], serializer: S) -> Result<S::Ok, S::Error>
+pub fn serialize<T, S, V>(value: V, serializer: S) -> Result<S::Ok, S::Error>
 where
-    S: Serializer<Ok = (), Error = error::Error>,
+    S: Serializer,
     T: Serialize,
+    V: IntoIterator<Item = T>,
 {
     let mut parts = vec![];
-    for v in value {
+    for v in value.into_iter() {
         // for dynvec, the element can't be molecule struct.
-        parts.push(to_vec(v, false)?);
+        parts.push(to_vec(&v, false).unwrap());
     }
     let data = assemble_table(parts);
     serializer.serialize_bytes(&data)

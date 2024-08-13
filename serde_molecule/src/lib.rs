@@ -10,11 +10,10 @@ extern crate std;
 
 pub use crate::error::{Error, Result};
 pub use crate::ser::to_vec;
-#[cfg(feature = "std")]
 pub use crate::ser::MoleculeSerializer;
 
-pub mod attribute;
 pub mod dynvec_serde;
 pub mod error;
+pub mod molecule;
 pub mod ser;
 pub mod struct_serde;

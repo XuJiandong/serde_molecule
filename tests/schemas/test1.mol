@@ -1,0 +1,22 @@
+array U16 [byte; 2];
+array U32 [byte; 4];
+array U64 [byte; 8];
+array U128 [byte; 16];
+vector Bytes <byte>;
+vector BytesVector <Bytes>;
+
+struct Struct1 {
+    f1: byte,
+    f2: U16,
+}
+
+table Table1 {
+    f1: byte,
+    f2: U16,
+    f3: U32,
+    f4: U64,
+    f5: U128,
+    fixvec: Bytes,
+    dynvec: BytesVector,
+    struct1: Struct1,
+}

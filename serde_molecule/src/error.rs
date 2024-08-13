@@ -8,6 +8,7 @@ pub enum Error {
     Unknown,
     Message(String),
     MismatchedLength,
+    Unimplemented,
 }
 
 pub type Result<T> = result::Result<T, Error>;
