@@ -15,6 +15,15 @@ struct Struct1 {
     f2: U16,
 }
 
+option Struct1Opt (Struct1);
+
+table MapEntry {
+    key: U128,
+    value: Bytes,
+}
+
+vector Map <MapEntry>;
+
 table Table1 {
     f1: byte,
     f2: U16,
@@ -27,6 +36,8 @@ table Table1 {
     option: U128Opt,
     array3: Array3,
     string: String,
+    struct1_opt: Struct1Opt,
+    map: Map,
 }
 
 union Enum1 {

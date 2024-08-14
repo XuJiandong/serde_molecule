@@ -50,4 +50,11 @@ lazy_static! {
         let default: Vec<Byte> = vec![('c' as u8).into(), ('d' as u8).into()];
         test1::String::new_builder().extend(default).build()
     };
+    pub static ref DEFAULT_MAP: test1::Map = {
+        let entry = test1::MapEntry::new_builder()
+            .key((*DEFAULT_U128).clone())
+            .value((*DEFAULT_FIXVEC).clone())
+            .build();
+        test1::Map::new_builder().push(entry).build()
+    };
 }

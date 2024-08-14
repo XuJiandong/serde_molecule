@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use super::test1::Struct1;
 use lazy_static::lazy_static;
 
@@ -19,4 +21,9 @@ lazy_static! {
     pub static ref DEFAULT_STRUCT1: Struct1 = Struct1 { f1: 0xcd, f2: 0xcd };
     pub static ref DEFAULT_ARRAY3: [u8; 3] = [0xcd, 0xcd, 0xcd];
     pub static ref DEFAULT_STRING: String = String::from("cd");
+    pub static ref DEFAULT_MAP: BTreeMap<u128, Vec<u8>> = {
+        let mut map = BTreeMap::new();
+        map.insert(DEFAULT_U128, DEFAULT_FIXVEC.clone());
+        map
+    };
 }
