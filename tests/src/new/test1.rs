@@ -1,6 +1,7 @@
 use serde::Serialize;
 use serde_molecule::dynvec_serde;
 use serde_molecule::struct_serde;
+use std::collections::BTreeMap;
 
 #[derive(Serialize, Clone)]
 pub struct Struct1 {
@@ -23,6 +24,9 @@ pub struct Table1 {
     pub option: Option<u128>,
     pub array3: [u8; 3],
     pub string: String,
+    #[serde(with = "struct_serde")]
+    pub struct1_opt: Option<Struct1>,
+    pub map: BTreeMap<u128, Vec<u8>>,
 }
 
 #[derive(Serialize)]

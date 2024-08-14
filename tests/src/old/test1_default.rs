@@ -28,26 +28,33 @@ lazy_static! {
     };
     pub static ref DEFAULT_DYNVEC: test1::BytesVector = {
         test1::BytesVector::new_builder()
-            .push((*DEFAULT_FIXVEC).clone())
-            .push((*DEFAULT_FIXVEC).clone())
-            .push((*DEFAULT_FIXVEC).clone())
+            .push(DEFAULT_FIXVEC.clone())
+            .push(DEFAULT_FIXVEC.clone())
+            .push(DEFAULT_FIXVEC.clone())
             .build()
     };
     pub static ref DEFAULT_STRUCT1: test1::Struct1 = {
         test1::Struct1::new_builder()
-            .f1((*DEFAULT_BYTE).clone())
-            .f2((*DEFAULT_U16).clone())
+            .f1(DEFAULT_BYTE.clone())
+            .f2(DEFAULT_U16.clone())
             .build()
     };
     pub static ref DEFAULT_ARRAY3: test1::Array3 = {
         test1::Array3::new_builder()
-            .nth0((*DEFAULT_BYTE).clone())
-            .nth1((*DEFAULT_BYTE).clone())
-            .nth2((*DEFAULT_BYTE).clone())
+            .nth0(DEFAULT_BYTE.clone())
+            .nth1(DEFAULT_BYTE.clone())
+            .nth2(DEFAULT_BYTE.clone())
             .build()
     };
     pub static ref DEFAULT_STRING: test1::String = {
         let default: Vec<Byte> = vec![('c' as u8).into(), ('d' as u8).into()];
         test1::String::new_builder().extend(default).build()
+    };
+    pub static ref DEFAULT_MAP: test1::Map = {
+        let entry = test1::MapEntry::new_builder()
+            .key(DEFAULT_U128.clone())
+            .value(DEFAULT_FIXVEC.clone())
+            .build();
+        test1::Map::new_builder().push(entry).build()
     };
 }
