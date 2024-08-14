@@ -1,0 +1,18 @@
+[package]
+name = "serde-molecule-tests"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde_molecule = { path = "../serde_molecule" }
+serde = { version = "1.0.194", features = ["derive"] }
+serde_bytes = "0.11.10"
+serde_derive = "1.0.166"
+serde_stacker = "0.1.8"
+trybuild = { version = "1.0.81", features = ["diff"] }
+molecule = { version = "0.8.0" }
+lazy_static = "1.5.0"
+hex = "0.4.3"
+ckb-gen-types = "0.117.0"

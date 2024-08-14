@@ -1,13 +1,12 @@
-use crate::error;
 use crate::ser::to_vec;
 use serde::{Deserializer, Serialize, Serializer};
 
 pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
 where
-    S: Serializer<Ok = (), Error = error::Error>,
+    S: Serializer,
     T: Serialize,
 {
-    let data = to_vec(value, true)?;
+    let data = to_vec(value, true).unwrap();
     serializer.serialize_bytes(&data)
 }
 

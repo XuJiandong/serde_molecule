@@ -4,10 +4,12 @@ use serde::ser;
 use std::error;
 use std::fmt::{self, Debug, Display};
 
+#[derive(Debug)]
 pub enum Error {
     Unknown,
     Message(String),
     MismatchedLength,
+    Unimplemented,
 }
 
 pub type Result<T> = result::Result<T, Error>;
@@ -28,11 +30,5 @@ impl serde::de::StdError for Error {
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
-    }
-}
-
-impl Debug for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Error({:?})", self)
     }
 }
