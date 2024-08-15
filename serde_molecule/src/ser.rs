@@ -403,13 +403,10 @@ impl<'a> ser::SerializeMap for Map<'a> {
     }
 }
 
-/// Serialize the given data structure as a molecule byte vector.
+/// Serialize the given data structure to byte vector.
 ///
-/// is_struct: is mapping to molecule struct or not.
-/// # Errors
-///
-/// Serialization can fail if `T`'s implementation of `Serialize` decides to
-/// fail
+/// is_struct: mapping to molecule struct. Set to false to map to molecule
+/// table.
 pub fn to_vec<T>(value: &T, is_struct: bool) -> Result<Vec<u8>>
 where
     T: ?Sized + Serialize,
