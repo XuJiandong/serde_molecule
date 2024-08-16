@@ -14,14 +14,14 @@ use serde::Serialize;
 use serde_molecule::to_vec;
 
 #[derive(Serialize)]
-pub struct Struct1 {
+pub struct Table1 {
     pub f1: u8,
     pub f2: u16,
 }
 
 fn main() {
-    let s = Struct1::new();
-    let data = to_vec(&s, true).unwrap();
+    let s = Table1::new();
+    let data = to_vec(&s, false).unwrap();
 }
 ```
 
@@ -35,12 +35,12 @@ Rust types are mapping to molecule types, according to the [RFC](https://github.
 | Rust Type | Molecule Type | Fixed Size |
 | --------- | ------------- | ---------- |
 | i8,u8     | byte          | yes |
-| i16, u16, i32, u32, i64, u64, i128, u128 | Array | yes |
-| [u8; N]   | Array | yes |
-| [T; N]    | Array | yes |
+| i16, u16, i32, u32, i64, u64, i128, u128 | array | yes |
+| [u8; N]   | array | yes |
+| [T; N]    | array | yes |
 | Vec<T>    | fixvec | no |
 | struct     | table | no |
-| #[serde(with = "struct_serde"]  | struct | yes |
+| #[serde(with = "struct_serde")] | struct | yes |
 | #[serde(with = "dynvec_serde")] | dynvec | no |
 | Option<T>  | option | no |
 | enum       | union | no |
