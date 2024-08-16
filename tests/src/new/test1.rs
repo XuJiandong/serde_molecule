@@ -1,3 +1,4 @@
+use serde::ser;
 use serde::Serialize;
 use serde_molecule::dynvec_serde;
 use serde_molecule::struct_serde;
@@ -55,12 +56,18 @@ impl Serialize for EnumCustomizedId {
         match self {
             EnumCustomizedId::S1(s1) => {
                 let mut data: Vec<u8> = (4278190081u32).to_le_bytes().into();
-                data.extend(to_vec(s1, true).unwrap());
+                data.extend(
+                    to_vec(s1, true)
+                        .map_err(|_| ser::Error::custom("failed to serialized Struct1"))?,
+                );
                 serializer.serialize_bytes(&data)
             }
             EnumCustomizedId::T1(t1) => {
                 let mut data: Vec<u8> = (4278190082u32).to_le_bytes().into();
-                data.extend(to_vec(t1, false).unwrap());
+                data.extend(
+                    to_vec(t1, false)
+                        .map_err(|_| ser::Error::custom("failed to serialize Table1"))?,
+                );
                 serializer.serialize_bytes(&data)
             }
         }
