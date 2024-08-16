@@ -98,5 +98,8 @@ vector Map <MapEntry>;
 It is not recommended to use HashMap because its key-value pairs are stored in
 arbitrary order.
 
+## Union with customized id
+For molecule union with customized id, see [example with EnumCustomizedId](./tests/src/new/test1.rs).
+
 ## Example
 Here is an example of [CKB types](./tests/src/ckb_types.rs)
