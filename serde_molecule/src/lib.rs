@@ -13,6 +13,7 @@ extern crate std;
 pub use crate::error::{Error, Result};
 pub use crate::ser::to_vec;
 
+pub mod de;
 pub mod dynvec_serde;
 pub mod error;
 pub mod molecule;
