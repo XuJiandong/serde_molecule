@@ -20,7 +20,7 @@ pub struct Table1 {
 }
 
 fn main() {
-    let s = Table1::new();
+    let s = Table1{f1: 0, f2: 0};
     let data = to_vec(&s, false).unwrap();
 }
 ```
@@ -57,7 +57,7 @@ serialized into `fixvec`. Every element in the `Vec` must have a fixed size
 (like a molecule struct, array, or primitive type). If the element is not of a
 fixed size, it should be annotated with `#[serde(with = "dynvec_serde")]`:
 
-```rust
+```rust,ignore
 use serde_molecule::dynvec_serde;
 #[derive(Serialize)]
 struct RawTransaction {
@@ -69,7 +69,7 @@ struct RawTransaction {
 
 By default, every field is considered as molecule table. If it is molecule
 struct, we should annotate it explicitly.
-```rust
+```rust,ignore
 use serde_molecule::struct_serde;
 
 #[derive(Serialize)]
