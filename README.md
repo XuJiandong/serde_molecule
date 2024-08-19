@@ -9,7 +9,7 @@ Serde.
 
 ## How to use
 Here is a simple case about how to use:
-```Rust
+```rust
 use serde::Serialize;
 use serde_molecule::to_vec;
 
@@ -57,7 +57,7 @@ serialized into `fixvec`. Every element in the `Vec` must have a fixed size
 (like a molecule struct, array, or primitive type). If the element is not of a
 fixed size, it should be annotated with `#[serde(with = "dynvec_serde")]`:
 
-```Rust
+```rust
 use serde_molecule::dynvec_serde;
 #[derive(Serialize)]
 struct RawTransaction {
@@ -69,7 +69,7 @@ struct RawTransaction {
 
 By default, every field is considered as molecule table. If it is molecule
 struct, we should annotate it explicitly.
-```Rust
+```rust
 use serde_molecule::struct_serde;
 
 #[derive(Serialize)]
@@ -87,7 +87,7 @@ molecule table.
 
 ## Map
 The Rust map types (like `BTreeMap` and `HashMap`) can be mapped to the following Molecule schemas:
-```
+```text
 table MapEntry {
     key: KEY_TYPE,
     value: VALUE_TYPE,

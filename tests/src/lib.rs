@@ -1,3 +1,4 @@
+#![doc(hidden)]
 #![allow(clippy::all)]
 pub mod ckb_types;
 pub mod new;

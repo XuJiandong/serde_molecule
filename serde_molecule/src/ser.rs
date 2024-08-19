@@ -7,8 +7,22 @@ use crate::molecule::{assemble_fixvec, assemble_struct, assemble_table};
 use alloc::vec::Vec;
 use serde::ser::{self, Serialize, SerializeTuple};
 
+/// Serialize the given data structure to byte vector.
+///
+/// Arguments
+/// * is_struct - mapping to molecule struct. Set to false to map to molecule
+/// table.
+pub fn to_vec<T>(value: &T, is_struct: bool) -> Result<Vec<u8>>
+where
+    T: ?Sized + Serialize,
+{
+    let mut serializer = MoleculeSerializer::new(is_struct);
+    value.serialize(&mut serializer)?;
+    Ok(serializer.into())
+}
+
 /// A structure for serializing Rust values into molecule.
-pub struct MoleculeSerializer {
+pub(crate) struct MoleculeSerializer {
     //
     // The molecule format requires a header before the body. It should output
     // the body first, then the header. We can't gain any benefit from utilizing the
@@ -31,10 +45,13 @@ impl MoleculeSerializer {
     }
 }
 
-impl MoleculeSerializer {
-    pub fn to_vec(self) -> Vec<u8> {
-        self.data
+impl From<MoleculeSerializer> for Vec<u8> {
+    fn from(value: MoleculeSerializer) -> Self {
+        value.data
     }
+}
+
+impl MoleculeSerializer {
     pub fn extend<I: IntoIterator<Item = u8>>(&mut self, iter: I) {
         self.data.extend(iter.into_iter());
     }
@@ -44,7 +61,7 @@ impl MoleculeSerializer {
 }
 
 // dummy
-pub struct Compound<'a> {
+pub(crate) struct Compound<'a> {
     ser: &'a mut MoleculeSerializer,
 }
 
@@ -255,7 +272,7 @@ impl<'a> ser::Serializer for &'a mut MoleculeSerializer {
     }
 }
 
-pub struct FixVec<'a> {
+pub(crate) struct FixVec<'a> {
     ser: &'a mut MoleculeSerializer,
     parts: Vec<Vec<u8>>,
 }
@@ -285,7 +302,7 @@ impl<'a> ser::SerializeSeq for FixVec<'a> {
 }
 
 // this tuple is used in serialization of [T; N]
-pub struct Tuple<'a> {
+pub(crate) struct Tuple<'a> {
     ser: &'a mut MoleculeSerializer,
     data: Vec<u8>,
 }
@@ -314,7 +331,7 @@ impl<'a> ser::SerializeTuple for Tuple<'a> {
     }
 }
 
-pub struct Table<'a> {
+pub(crate) struct Table<'a> {
     ser: &'a mut MoleculeSerializer,
     parts: Vec<Vec<u8>>,
     len: usize,
@@ -356,7 +373,7 @@ impl<'a> ser::SerializeStruct for Table<'a> {
     }
 }
 
-pub struct Map<'a> {
+pub(crate) struct Map<'a> {
     ser: &'a mut MoleculeSerializer,
     parts: Vec<Vec<u8>>,
     temp_key: Vec<u8>,
@@ -382,7 +399,7 @@ impl<'a> ser::SerializeMap for Map<'a> {
     {
         let mut ser = MoleculeSerializer::new(false);
         let result = key.serialize(&mut ser);
-        self.temp_key = ser.to_vec();
+        self.temp_key = ser.into();
         result
     }
 
@@ -392,7 +409,7 @@ impl<'a> ser::SerializeMap for Map<'a> {
     {
         let mut ser = MoleculeSerializer::new(false);
         let result = value.serialize(&mut ser);
-        let mut parts = vec![self.temp_key.clone(), ser.to_vec()];
+        let mut parts = vec![self.temp_key.clone(), ser.into()];
         self.parts.push(assemble_table(parts));
         result
     }
@@ -401,19 +418,6 @@ impl<'a> ser::SerializeMap for Map<'a> {
         self.ser.extend(assemble_table(self.parts));
         Ok(())
     }
-}
-
-/// Serialize the given data structure to byte vector.
-///
-/// is_struct: mapping to molecule struct. Set to false to map to molecule
-/// table.
-pub fn to_vec<T>(value: &T, is_struct: bool) -> Result<Vec<u8>>
-where
-    T: ?Sized + Serialize,
-{
-    let mut serializer = MoleculeSerializer::new(is_struct);
-    value.serialize(&mut serializer)?;
-    Ok(serializer.to_vec())
 }
 
 impl<'a> ser::SerializeTupleStruct for Compound<'a> {
