@@ -1,11 +1,12 @@
-// assemble molecule table or dynvec
-// https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0008-serialization/0008-serialization.md#table
-// The table is a dynamic-size type. It can be considered as a dynvec but the length is fixed.
-// The serializing steps are same as dynvec:
-// Serialize the full size in bytes as a 32 bit unsigned integer in little-endian.
-// Serialize all offset of fields as 32 bit unsigned integer in little-endian.
-// Serialize all fields in it in the order they are declared.
-//
+///
+/// Assemble molecule table or dynvec. See
+/// <https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0008-serialization/0008-serialization.md#table>
+/// The table is a dynamic-size type. It can be considered as a dynvec but the length is fixed.
+/// The serializing steps are same as dynvec:
+/// * Serialize the full size in bytes as a 32 bit unsigned integer in little-endian.
+/// * Serialize all offset of fields as 32 bit unsigned integer in little-endian.
+/// * Serialize all fields in it in the order they are declared.
+///
 pub fn assemble_table(parts: Vec<Vec<u8>>) -> Vec<u8> {
     let header_len = parts.len() + 1;
     let mut header = vec![0u32; header_len];
@@ -30,11 +31,11 @@ pub fn assemble_table(parts: Vec<Vec<u8>>) -> Vec<u8> {
     result
 }
 
-// assemble molecule fixvec
-// https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0008-serialization/0008-serialization.md#fixvec---fixed-vector
-// There are two steps of serializing a fixvec:
-// Serialize the length as a 32 bit unsigned integer in little-endian.
-// Serialize all items in it.
+/// Assemble molecule fixvec. See
+/// <https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0008-serialization/0008-serialization.md#fixvec---fixed-vector>
+/// There are two steps of serializing a fixvec:
+/// * Serialize the length as a 32 bit unsigned integer in little-endian.
+/// * Serialize all items in it.
 pub fn assemble_fixvec(parts: Vec<Vec<u8>>) -> Vec<u8> {
     if parts.len() > 1 {
         let len = parts[0].len();
@@ -52,7 +53,8 @@ pub fn assemble_fixvec(parts: Vec<Vec<u8>>) -> Vec<u8> {
     });
     result
 }
-// assemble molecule struct
+
+/// assemble molecule struct
 pub fn assemble_struct(parts: Vec<Vec<u8>>) -> Vec<u8> {
     let mut result = vec![];
     parts.into_iter().fold(&mut result, |acc, item| {

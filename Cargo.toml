@@ -3,6 +3,5 @@ resolver = "2"
 
 members = [
     "serde_molecule",
-    "serde_molecule_derive"
-, "tests"]
+    "tests"]
 
