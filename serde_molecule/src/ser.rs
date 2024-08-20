@@ -296,7 +296,7 @@ impl<'a> ser::SerializeSeq for FixVec<'a> {
     }
 
     fn end(self) -> Result<()> {
-        self.ser.extend(assemble_fixvec(self.parts));
+        self.ser.extend(assemble_fixvec(&self.parts)?);
         Ok(())
     }
 }
@@ -366,7 +366,7 @@ impl<'a> ser::SerializeStruct for Table<'a> {
             let data = assemble_struct(self.parts);
             self.ser.extend(data);
         } else {
-            let data = assemble_table(self.parts);
+            let data = assemble_table(&self.parts);
             self.ser.extend(data);
         }
         Ok(())
@@ -410,12 +410,12 @@ impl<'a> ser::SerializeMap for Map<'a> {
         let mut ser = MoleculeSerializer::new(false);
         let result = value.serialize(&mut ser);
         let mut parts = vec![self.temp_key.clone(), ser.into()];
-        self.parts.push(assemble_table(parts));
+        self.parts.push(assemble_table(&parts));
         result
     }
 
     fn end(self) -> Result<()> {
-        self.ser.extend(assemble_table(self.parts));
+        self.ser.extend(assemble_table(&self.parts));
         Ok(())
     }
 }

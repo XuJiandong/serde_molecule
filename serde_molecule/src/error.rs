@@ -14,6 +14,8 @@ pub enum Error {
     InvalidFixvec,
     InvalidDynvec,
     MismatchedTableFieldCount,
+    Overflow,
+    InvalidArray,
 }
 
 pub type Result<T> = result::Result<T, Error>;

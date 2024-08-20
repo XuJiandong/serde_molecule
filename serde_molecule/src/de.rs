@@ -2,9 +2,11 @@
 // TODO: remove it
 #![allow(unused_variables)]
 #![allow(dead_code)]
-use crate::error::{Error, Result};
-use serde::de;
-const NUMBER_SIZE: usize = 4;
+use crate::{
+    error::{Error, Result},
+    molecule::{disassemble_fixvec, disassemble_table, unpack_number},
+};
+use serde::de::{self, value::U64Deserializer};
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -46,74 +48,16 @@ impl<'de> MoleculeDeserializer<'de> {
     as_primitives!(as_i32, i32, 4);
     as_primitives!(as_i64, i64, 8);
     as_primitives!(as_i128, i128, 16);
-    fn as_array4(&self) -> Result<[u8; 4]> {
-        if self.data.len() != 4 {
-            Err(Error::MismatchedLength)
-        } else {
-            Ok(self.data.try_into().unwrap())
-        }
-    }
-    fn as_array8(&self) -> Result<[u8; 8]> {
-        if self.data.len() != 8 {
-            Err(Error::MismatchedLength)
-        } else {
-            Ok(self.data.try_into().unwrap())
-        }
-    }
-    fn unpack_number(&self, start: usize) -> Result<usize> {
-        if self.data.len() < (4 + start) {
-            Err(Error::LengthNotEnough)
-        } else {
-            let bytes: [u8; 4] = self.data[start..start + 4].try_into().unwrap();
-            Ok(u32::from_le_bytes(bytes) as usize)
-        }
-    }
-    fn parse_fixvec(&self, item_size: usize) -> Result<&'de [u8]> {
-        let item_count = self.unpack_number(0)?;
-        if item_count * item_size != (self.data.len() - 4) {
+    as_primitives!(as_f32, f32, 4);
+    as_primitives!(as_f64, f64, 8);
+    // fixvec with element size = 1
+    fn disassemble_bytes(&self) -> Result<&'de [u8]> {
+        let item_count = unpack_number(self.data, 0)?;
+        if item_count != (self.data.len() - 4) {
             Err(Error::InvalidFixvec)
         } else {
             Ok(&self.data[4..])
         }
-    }
-    fn parse_dynvec(&self) -> Result<Vec<&'de [u8]>> {
-        let mut result = vec![];
-
-        let total_size = self.unpack_number(0)?;
-        if self.data.len() != total_size {
-            return Err(Error::InvalidDynvec);
-        }
-        if total_size == NUMBER_SIZE {
-            return Ok(result);
-        }
-        if total_size < NUMBER_SIZE * 2 {
-            return Err(Error::InvalidDynvec);
-        }
-        let mut cur = 0;
-        cur += NUMBER_SIZE;
-        let first_offset = self.unpack_number(cur)?;
-        if first_offset % NUMBER_SIZE != 0 || first_offset < NUMBER_SIZE * 2 {
-            return Err(Error::InvalidDynvec);
-        }
-        if total_size < first_offset {
-            return Err(Error::InvalidDynvec);
-        }
-        let count = first_offset / 4 - 1;
-        let mut last_offset = first_offset;
-        cur += NUMBER_SIZE;
-        for index in 1..count {
-            let offset = self.unpack_number(cur)?;
-            if last_offset > offset {
-                return Err(Error::InvalidDynvec);
-            }
-            if offset > self.data.len() {
-                return Err(Error::InvalidDynvec);
-            }
-            result.push(&self.data[last_offset..offset]);
-            last_offset = offset;
-            cur += NUMBER_SIZE;
-        }
-        Ok(result)
     }
 }
 
@@ -202,15 +146,13 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut MoleculeDeserializer<'de> {
     where
         V: de::Visitor<'de>,
     {
-        let array = self.as_array4()?;
-        visitor.visit_f32(f32::from_le_bytes(array))
+        visitor.visit_f32(self.as_f32()?)
     }
     fn deserialize_f64<V>(self, visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
-        let array = self.as_array8()?;
-        visitor.visit_f64(f64::from_le_bytes(array))
+        visitor.visit_f64(self.as_f64()?)
     }
 
     fn deserialize_char<V>(self, visitor: V) -> Result<V::Value>
@@ -231,7 +173,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut MoleculeDeserializer<'de> {
     where
         V: de::Visitor<'de>,
     {
-        let s = self.parse_fixvec(1)?;
+        let s = self.disassemble_bytes()?;
         let v = String::from_utf8_lossy(s);
         visitor.visit_string(v.into_owned())
     }
@@ -240,8 +182,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut MoleculeDeserializer<'de> {
     where
         V: de::Visitor<'de>,
     {
-        let s = self.parse_fixvec(1)?;
-        visitor.visit_bytes(s)
+        visitor.visit_bytes(self.data)
     }
     fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value>
     where
@@ -265,7 +206,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut MoleculeDeserializer<'de> {
     where
         V: de::Visitor<'de>,
     {
-        todo!()
+        visitor.visit_unit()
     }
 
     fn deserialize_unit_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value>
@@ -288,14 +229,18 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut MoleculeDeserializer<'de> {
     where
         V: de::Visitor<'de>,
     {
-        visitor.visit_seq(FixvecAccess::new(self, 0))
+        let mut access = FixvecAccess::new(self);
+        access.parse()?;
+        visitor.visit_seq(access)
     }
 
-    fn deserialize_tuple<V>(self, _len: usize, visitor: V) -> Result<V::Value>
+    fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
-        todo!()
+        let mut access = ArrayAccess::new(self, len);
+        access.parse()?;
+        visitor.visit_seq(access)
     }
 
     fn deserialize_tuple_struct<V>(
@@ -320,13 +265,15 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut MoleculeDeserializer<'de> {
     fn deserialize_struct<V>(
         self,
         _name: &'static str,
-        _fields: &'static [&'static str],
+        fields: &'static [&'static str],
         visitor: V,
     ) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
-        todo!()
+        let mut access = TableAccess::new(self, fields.len());
+        access.parse()?;
+        visitor.visit_map(access)
     }
     fn deserialize_enum<V>(
         self,
@@ -356,19 +303,72 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut MoleculeDeserializer<'de> {
     }
 }
 
+struct ArrayAccess<'de, 'a> {
+    de: &'a mut MoleculeDeserializer<'de>,
+    current_index: usize,
+    count: usize,
+    item_size: usize,
+}
+
+impl<'de, 'a> ArrayAccess<'de, 'a> {
+    fn new(de: &'a mut MoleculeDeserializer<'de>, count: usize) -> Self {
+        ArrayAccess {
+            de,
+            current_index: 0,
+            count,
+            item_size: 0,
+        }
+    }
+    fn parse(&mut self) -> Result<()> {
+        if self.count == 0 {
+            return Err(Error::InvalidArray);
+        }
+        if self.de.data.len() % self.count == 0 {
+            self.item_size = self.de.data.len() / self.count;
+            Ok(())
+        } else {
+            Err(Error::InvalidArray)
+        }
+    }
+}
+
+impl<'de, 'a> de::SeqAccess<'de> for ArrayAccess<'de, 'a> {
+    type Error = Error;
+
+    fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>>
+    where
+        T: de::DeserializeSeed<'de>,
+    {
+        if self.current_index < self.count {
+            let part = &self.de.data
+                [self.current_index * self.item_size..(self.current_index + 1) * self.item_size];
+            self.current_index += 1;
+            let mut de = MoleculeDeserializer::new(part);
+            let value = seed.deserialize(&mut de)?;
+            Ok(Some(value))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
 struct FixvecAccess<'de, 'a> {
     de: &'a mut MoleculeDeserializer<'de>,
     current_index: usize,
-    total_size: usize,
+    parts: Vec<&'de [u8]>,
 }
 
 impl<'de, 'a> FixvecAccess<'de, 'a> {
-    fn new(de: &'a mut MoleculeDeserializer<'de>, total_size: usize) -> Self {
+    fn new(de: &'a mut MoleculeDeserializer<'de>) -> Self {
         FixvecAccess {
             de,
             current_index: 0,
-            total_size,
+            parts: vec![],
         }
+    }
+    fn parse(&mut self) -> Result<()> {
+        self.parts = disassemble_fixvec(self.de.data)?;
+        Ok(())
     }
 }
 
@@ -379,15 +379,23 @@ impl<'de, 'a> de::SeqAccess<'de> for FixvecAccess<'de, 'a> {
     where
         T: de::DeserializeSeed<'de>,
     {
-        todo!()
+        if self.current_index < self.parts.len() {
+            let part = self.parts[self.current_index];
+            self.current_index += 1;
+            let mut de = MoleculeDeserializer::new(part);
+            let value = seed.deserialize(&mut de)?;
+            Ok(Some(value))
+        } else {
+            Ok(None)
+        }
     }
 }
 
 struct TableAccess<'de, 'a> {
     de: &'a mut MoleculeDeserializer<'de>,
     current_index: usize,
-    total_count: usize,
-    header: Vec<&'de [u8]>,
+    count: usize,
+    parts: Vec<&'de [u8]>,
 }
 
 impl<'de, 'a> TableAccess<'de, 'a> {
@@ -395,13 +403,14 @@ impl<'de, 'a> TableAccess<'de, 'a> {
         TableAccess {
             de,
             current_index: 0,
-            total_count,
-            header: vec![],
+            count: total_count,
+            parts: vec![],
         }
     }
-    fn build_header(&mut self) -> Result<()> {
-        self.header = self.de.parse_dynvec()?;
-        if self.header.len() != self.total_count {
+    fn parse(&mut self) -> Result<()> {
+        self.parts = disassemble_table(self.de.data)?;
+        // TODO: compatible
+        if self.parts.len() != self.count {
             return Err(Error::MismatchedTableFieldCount);
         }
         Ok(())
@@ -415,8 +424,9 @@ impl<'de, 'a> de::MapAccess<'de> for TableAccess<'de, 'a> {
     where
         K: de::DeserializeSeed<'de>,
     {
-        if self.current_index < self.total_count {
-            todo!()
+        if self.current_index < self.parts.len() {
+            let de = U64Deserializer::<Error>::new(self.current_index as u64);
+            Ok(Some(seed.deserialize(de)?))
         } else {
             Ok(None)
         }
@@ -426,8 +436,8 @@ impl<'de, 'a> de::MapAccess<'de> for TableAccess<'de, 'a> {
     where
         V: de::DeserializeSeed<'de>,
     {
-        assert!(self.current_index < self.total_count);
-        let part = self.header[self.current_index];
+        assert!(self.current_index < self.parts.len());
+        let part = self.parts[self.current_index];
         self.current_index += 1;
         let mut de = MoleculeDeserializer::new(part);
         seed.deserialize(&mut de)

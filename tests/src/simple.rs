@@ -1,4 +1,6 @@
 #[cfg(test)]
+use crate::new::test1::Struct1;
+#[cfg(test)]
 use crate::new::test1::Table1 as NewTable1;
 #[cfg(test)]
 use crate::new::test1_default as new_default;
@@ -11,15 +13,29 @@ use crate::old::test1_default as old_default;
 #[cfg(test)]
 use molecule::prelude::*;
 #[cfg(test)]
-use serde_molecule::to_vec;
+use serde_molecule::{from_slice, to_vec};
 
 #[test]
-fn test_struct1() {
+fn test_ser_struct1() {
     let old_value = old_default::DEFAULT_STRUCT1.clone();
     let new_value = new_default::DEFAULT_STRUCT1.clone();
     let old = old_value.as_slice();
     let new = to_vec(&new_value, true).unwrap();
     assert_eq!(old, &new);
+}
+
+#[test]
+fn test_de_struct1() {
+    let new_value = new_default::DEFAULT_STRUCT1.clone();
+    let new_vec = to_vec(&new_value, false).unwrap();
+    let new_value2: Struct1 = from_slice(&new_vec).unwrap();
+    assert_eq!(new_value, new_value2);
+
+    let mut wrong_vec = new_vec.clone();
+    let l = wrong_vec.len();
+    wrong_vec[l - 1] ^= 1;
+    let new_value2: Struct1 = from_slice(&wrong_vec).unwrap();
+    assert_ne!(new_value, new_value2);
 }
 
 #[test]

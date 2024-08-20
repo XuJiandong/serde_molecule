@@ -1,17 +1,18 @@
 use serde::ser;
+use serde::Deserialize;
 use serde::Serialize;
 use serde_molecule::dynvec_serde;
 use serde_molecule::struct_serde;
 use serde_molecule::to_vec;
 use std::collections::BTreeMap;
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub struct Struct1 {
     pub f1: u8,
     pub f2: u16,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub struct Table1 {
     pub f1: u8,
     pub f2: u16,

@@ -16,7 +16,7 @@ where
                 .map_err(|_| ser::Error::custom("failed to serialize element in vector"))?,
         );
     }
-    let data = assemble_table(parts);
+    let data = assemble_table(&parts);
     serializer.serialize_bytes(&data)
 }
 
