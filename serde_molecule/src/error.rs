@@ -16,6 +16,8 @@ pub enum Error {
     MismatchedTableFieldCount,
     Overflow,
     InvalidArray,
+    InvalidStructField,
+    InvalidMap,
 }
 
 pub type Result<T> = result::Result<T, Error>;

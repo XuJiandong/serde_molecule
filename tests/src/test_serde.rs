@@ -1,7 +1,21 @@
-use std::collections::LinkedList;
+use std::collections::{BTreeMap, LinkedList};
 
 use serde::{Deserialize, Serialize};
-use serde_molecule::{dynvec_serde, from_slice, to_vec};
+use serde_molecule::{dynvec_serde, from_slice, struct_serde, to_vec};
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, Default, Debug)]
+struct StructInner {
+    f0: u32,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, Default, Debug)]
+struct Struct0 {
+    f0: u8,
+    f1: u64,
+    f2: [u8; 3],
+    #[serde(with = "struct_serde")]
+    f3: StructInner,
+}
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Default, Debug)]
 struct Struct1 {
@@ -15,6 +29,9 @@ struct Struct1 {
     #[serde(with = "dynvec_serde")]
     pub f8: Vec<Vec<u8>>,
     pub f9: LinkedList<[u8; 3]>,
+    #[serde(with = "struct_serde")]
+    pub f10: Struct0,
+    pub f11: BTreeMap<u32, String>,
 }
 
 #[test]
@@ -28,6 +45,13 @@ fn test_serde_1() {
     value.f6 = String::from("hello");
     value.f8 = vec![vec![1, 2, 3], vec![4, 5, 6], vec![]];
     value.f9 = [[1, 2, 3], [4, 5, 6]].into();
+    value.f10.f0 = 1;
+    value.f10.f2[0] = 10;
+    value.f10.f2[1] = 20;
+    value.f10.f2[2] = 20;
+    value.f11.insert(1, "hi".into());
+    value.f11.insert(2, "hi2".into());
+    value.f11.insert(100, "hi100".into());
     let bytes = to_vec(&value, false).unwrap();
     let value2 = from_slice(&bytes).unwrap();
     assert_eq!(value, value2);

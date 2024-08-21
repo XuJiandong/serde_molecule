@@ -22,7 +22,7 @@ impl<'de> MoleculeDeserializer<'de> {
     }
 }
 
-macro_rules! as_primitives {
+macro_rules! as_primitive {
     ($method:ident, $type: ty, $len: expr) => {
         fn $method(&self) -> Result<$type> {
             if self.data.len() != $len {
@@ -36,21 +36,18 @@ macro_rules! as_primitives {
 }
 
 impl<'de> MoleculeDeserializer<'de> {
-    pub fn end(self) -> Result<()> {
-        todo!()
-    }
-    as_primitives!(as_u8, u8, 1);
-    as_primitives!(as_u16, u16, 2);
-    as_primitives!(as_u32, u32, 4);
-    as_primitives!(as_u64, u64, 8);
-    as_primitives!(as_u128, u128, 16);
-    as_primitives!(as_i8, i8, 1);
-    as_primitives!(as_i16, i16, 2);
-    as_primitives!(as_i32, i32, 4);
-    as_primitives!(as_i64, i64, 8);
-    as_primitives!(as_i128, i128, 16);
-    as_primitives!(as_f32, f32, 4);
-    as_primitives!(as_f64, f64, 8);
+    as_primitive!(as_u8, u8, 1);
+    as_primitive!(as_u16, u16, 2);
+    as_primitive!(as_u32, u32, 4);
+    as_primitive!(as_u64, u64, 8);
+    as_primitive!(as_u128, u128, 16);
+    as_primitive!(as_i8, i8, 1);
+    as_primitive!(as_i16, i16, 2);
+    as_primitive!(as_i32, i32, 4);
+    as_primitive!(as_i64, i64, 8);
+    as_primitive!(as_i128, i128, 16);
+    as_primitive!(as_f32, f32, 4);
+    as_primitive!(as_f64, f64, 8);
     // fixvec with element size = 1
     fn disassemble_bytes(&self) -> Result<&'de [u8]> {
         let item_count = unpack_number(self.data, 0)?;
@@ -247,20 +244,22 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut MoleculeDeserializer<'de> {
     fn deserialize_tuple_struct<V>(
         self,
         _name: &'static str,
-        _len: usize,
+        len: usize,
         visitor: V,
     ) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
-        todo!()
+        self.deserialize_tuple(len, visitor)
     }
 
     fn deserialize_map<V>(self, visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
-        todo!()
+        let mut access = MappingAccess::new(self);
+        access.parse()?;
+        visitor.visit_map(access)
     }
 
     fn deserialize_struct<V>(
@@ -318,7 +317,7 @@ struct ArrayAccess<'de, 'a> {
 }
 
 impl<'de, 'a> ArrayAccess<'de, 'a> {
-    fn new(de: &'a mut MoleculeDeserializer<'de>, count: usize) -> Self {
+    pub fn new(de: &'a mut MoleculeDeserializer<'de>, count: usize) -> Self {
         ArrayAccess {
             de,
             current_index: 0,
@@ -326,7 +325,7 @@ impl<'de, 'a> ArrayAccess<'de, 'a> {
             item_size: 0,
         }
     }
-    fn parse(&mut self) -> Result<()> {
+    pub fn parse(&mut self) -> Result<()> {
         if self.count == 0 {
             return Err(Error::InvalidArray);
         }
@@ -447,6 +446,61 @@ impl<'de, 'a> de::MapAccess<'de> for TableAccess<'de, 'a> {
         let part = self.parts[self.current_index];
         self.current_index += 1;
         let mut de = MoleculeDeserializer::new(part);
+        seed.deserialize(&mut de)
+    }
+}
+
+struct MappingAccess<'de, 'a> {
+    de: &'a mut MoleculeDeserializer<'de>,
+    current_index: usize,
+    parts: Vec<(&'de [u8], &'de [u8])>,
+}
+
+impl<'de, 'a> MappingAccess<'de, 'a> {
+    fn new(de: &'a mut MoleculeDeserializer<'de>) -> Self {
+        MappingAccess {
+            de,
+            current_index: 0,
+            parts: vec![],
+        }
+    }
+    fn parse(&mut self) -> Result<()> {
+        let all = disassemble_table(self.de.data)?;
+        for item in all.into_iter() {
+            let kv = disassemble_table(item)?;
+            if kv.len() != 2 {
+                return Err(Error::InvalidMap);
+            }
+            self.parts.push((kv[0], kv[1]));
+        }
+        Ok(())
+    }
+}
+
+impl<'de, 'a> de::MapAccess<'de> for MappingAccess<'de, 'a> {
+    type Error = Error;
+
+    fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>>
+    where
+        K: de::DeserializeSeed<'de>,
+    {
+        if self.current_index < self.parts.len() {
+            let key_slice = self.parts[self.current_index].0;
+            let mut de = MoleculeDeserializer::new(key_slice);
+            Ok(Some(seed.deserialize(&mut de)?))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value>
+    where
+        V: de::DeserializeSeed<'de>,
+    {
+        assert!(self.current_index < self.parts.len());
+        let value_slice = self.parts[self.current_index].1;
+        self.current_index += 1;
+        let mut de = MoleculeDeserializer::new(value_slice);
         seed.deserialize(&mut de)
     }
 }
