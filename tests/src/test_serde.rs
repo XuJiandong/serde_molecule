@@ -17,6 +17,19 @@ struct Struct0 {
     f3: StructInner,
 }
 
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
+enum Union0 {
+    A(u32),
+    B(String),
+    C([u8; 3]),
+}
+
+impl Default for Union0 {
+    fn default() -> Self {
+        Union0::A(100)
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, PartialEq, Default, Debug)]
 struct Struct1 {
     pub f1: u8,
@@ -32,6 +45,7 @@ struct Struct1 {
     #[serde(with = "struct_serde")]
     pub f10: Struct0,
     pub f11: BTreeMap<u32, String>,
+    pub f12: Union0,
 }
 
 #[test]
@@ -52,6 +66,7 @@ fn test_serde_1() {
     value.f11.insert(1, "hi".into());
     value.f11.insert(2, "hi2".into());
     value.f11.insert(100, "hi100".into());
+    value.f12 = Union0::B("hello".into());
     let bytes = to_vec(&value, false).unwrap();
     let value2 = from_slice(&bytes).unwrap();
     assert_eq!(value, value2);

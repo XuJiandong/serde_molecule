@@ -290,8 +290,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut MoleculeDeserializer<'de> {
     where
         V: de::Visitor<'de>,
     {
-        let ret = visitor.visit_enum(VariantAccess::new(self));
-        todo!()
+        visitor.visit_enum(UnionAccess::new(self))
     }
 
     fn deserialize_identifier<V>(self, visitor: V) -> Result<V::Value>
@@ -552,17 +551,17 @@ impl<'de, 'a> de::MapAccess<'de> for DynvecAccess<'de, 'a> {
     }
 }
 
-struct VariantAccess<'de, 'a> {
+struct UnionAccess<'de, 'a> {
     de: &'a mut MoleculeDeserializer<'de>,
 }
 
-impl<'de, 'a> VariantAccess<'de, 'a> {
+impl<'de, 'a> UnionAccess<'de, 'a> {
     fn new(de: &'a mut MoleculeDeserializer<'de>) -> Self {
-        VariantAccess { de }
+        UnionAccess { de }
     }
 }
 
-impl<'de, 'a> de::EnumAccess<'de> for VariantAccess<'de, 'a> {
+impl<'de, 'a> de::EnumAccess<'de> for UnionAccess<'de, 'a> {
     type Error = Error;
     type Variant = Self;
 
@@ -570,11 +569,14 @@ impl<'de, 'a> de::EnumAccess<'de> for VariantAccess<'de, 'a> {
     where
         V: de::DeserializeSeed<'de>,
     {
-        todo!()
+        let id = unpack_number(self.de.data, 0)?;
+        self.de.data = &self.de.data[4..];
+        let de = U64Deserializer::<Error>::new(id as u64);
+        Ok((seed.deserialize(de)?, self))
     }
 }
 
-impl<'de, 'a> de::VariantAccess<'de> for VariantAccess<'de, 'a> {
+impl<'de, 'a> de::VariantAccess<'de> for UnionAccess<'de, 'a> {
     type Error = Error;
 
     fn unit_variant(self) -> Result<()> {
@@ -588,11 +590,11 @@ impl<'de, 'a> de::VariantAccess<'de> for VariantAccess<'de, 'a> {
         seed.deserialize(self.de)
     }
 
-    fn tuple_variant<V>(self, _len: usize, visitor: V) -> Result<V::Value>
+    fn tuple_variant<V>(self, len: usize, visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
-        de::Deserializer::deserialize_seq(self.de, visitor)
+        de::Deserializer::deserialize_tuple(self.de, len, visitor)
     }
 
     fn struct_variant<V>(self, fields: &'static [&'static str], visitor: V) -> Result<V::Value>
