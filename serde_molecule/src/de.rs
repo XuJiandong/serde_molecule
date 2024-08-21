@@ -9,6 +9,7 @@ use crate::{
 use serde::de::{self, value::U64Deserializer};
 
 //////////////////////////////////////////////////////////////////////////////
+pub(crate) const DYNVEC_STR: &str = "__dyn_vec__";
 
 /// A structure that deserializes molecule into Rust values.
 pub(crate) struct MoleculeDeserializer<'de> {
@@ -159,7 +160,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut MoleculeDeserializer<'de> {
     where
         V: de::Visitor<'de>,
     {
-        todo!()
+        visitor.visit_u32(self.as_u32()?)
     }
 
     fn deserialize_str<V>(self, visitor: V) -> Result<V::Value>
@@ -259,21 +260,27 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut MoleculeDeserializer<'de> {
     where
         V: de::Visitor<'de>,
     {
-        visitor.visit_map(TableAccess::new(self, 0))
+        todo!()
     }
 
     fn deserialize_struct<V>(
         self,
-        _name: &'static str,
+        name: &'static str,
         fields: &'static [&'static str],
         visitor: V,
     ) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
-        let mut access = TableAccess::new(self, fields.len());
-        access.parse()?;
-        visitor.visit_map(access)
+        if name == DYNVEC_STR {
+            let mut access = DynvecAccess::new(self);
+            access.parse()?;
+            visitor.visit_map(access)
+        } else {
+            let mut access = TableAccess::new(self, fields.len());
+            access.parse()?;
+            visitor.visit_map(access)
+        }
     }
     fn deserialize_enum<V>(
         self,
@@ -418,6 +425,53 @@ impl<'de, 'a> TableAccess<'de, 'a> {
 }
 
 impl<'de, 'a> de::MapAccess<'de> for TableAccess<'de, 'a> {
+    type Error = Error;
+
+    fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>>
+    where
+        K: de::DeserializeSeed<'de>,
+    {
+        if self.current_index < self.parts.len() {
+            let de = U64Deserializer::<Error>::new(self.current_index as u64);
+            Ok(Some(seed.deserialize(de)?))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value>
+    where
+        V: de::DeserializeSeed<'de>,
+    {
+        assert!(self.current_index < self.parts.len());
+        let part = self.parts[self.current_index];
+        self.current_index += 1;
+        let mut de = MoleculeDeserializer::new(part);
+        seed.deserialize(&mut de)
+    }
+}
+
+struct DynvecAccess<'de, 'a> {
+    de: &'a mut MoleculeDeserializer<'de>,
+    current_index: usize,
+    parts: Vec<&'de [u8]>,
+}
+
+impl<'de, 'a> DynvecAccess<'de, 'a> {
+    fn new(de: &'a mut MoleculeDeserializer<'de>) -> Self {
+        DynvecAccess {
+            de,
+            current_index: 0,
+            parts: vec![],
+        }
+    }
+    fn parse(&mut self) -> Result<()> {
+        self.parts = disassemble_table(self.de.data)?;
+        Ok(())
+    }
+}
+
+impl<'de, 'a> de::MapAccess<'de> for DynvecAccess<'de, 'a> {
     type Error = Error;
 
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>>

@@ -1,18 +1,10 @@
-#[cfg(test)]
 use crate::new::test1::Struct1;
-#[cfg(test)]
 use crate::new::test1::Table1 as NewTable1;
-#[cfg(test)]
 use crate::new::test1_default as new_default;
-#[cfg(test)]
 use crate::old::test1::Struct1Opt;
-#[cfg(test)]
 use crate::old::test1::Table1 as OldTable1;
-#[cfg(test)]
 use crate::old::test1_default as old_default;
-#[cfg(test)]
 use molecule::prelude::*;
-#[cfg(test)]
 use serde_molecule::{from_slice, to_vec};
 
 #[test]
