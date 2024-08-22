@@ -312,11 +312,11 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut MoleculeDeserializer<'de> {
         visitor.visit_enum(UnionAccess::new(self))
     }
 
-    fn deserialize_identifier<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_identifier<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
-        visitor.visit_unit()
+        Err(Error::Unimplemented)
     }
 
     fn deserialize_ignored_any<V>(self, _visitor: V) -> Result<V::Value>

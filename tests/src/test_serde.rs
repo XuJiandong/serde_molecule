@@ -77,3 +77,18 @@ fn test_serde_1() {
     value.f8 = vec![vec![], vec![1, 2, 3]];
     test_once(&value);
 }
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
+enum Union1 {
+    A,
+    B,
+    C,
+}
+#[test]
+fn test_unit_variant() {
+    let u = Union1::C;
+    let bytes = to_vec(&u, false).unwrap();
+    assert_eq!(bytes, vec![2, 0, 0, 0]);
+    let u2: Union1 = from_slice(&bytes, false).unwrap();
+    assert_eq!(u, u2);
+}
