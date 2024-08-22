@@ -90,9 +90,9 @@ pub struct CellInput {
 }
 ```
 
-If the top-level type is a molecule struct, the second argument to `to_vec`
-should be `true`. If the value is `false`, the top-level type is considered a
-molecule table.
+If the top-level type is a molecule struct, the second argument to `to_vec` or
+`from_slice` should be `true`. If the value is `false`, the top-level type is
+considered a molecule table.
 
 
 ## Map
