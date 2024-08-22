@@ -92,3 +92,31 @@ fn test_unit_variant() {
     let u2: Union1 = from_slice(&bytes, false).unwrap();
     assert_eq!(u, u2);
 }
+
+#[derive(Serialize, Deserialize, PartialEq)]
+struct SkipField {
+    f1: u8,
+    #[serde(skip)]
+    ignore: u8,
+    f2: u32,
+}
+
+#[test]
+fn test_skip_field() {
+    let s = SkipField {
+        f1: 1,
+        ignore: 2,
+        f2: 3,
+    };
+    let bytes = to_vec(&s, false).unwrap();
+    assert_eq!(
+        bytes,
+        vec![17, 0, 0, 0, 12, 0, 0, 0, 13, 0, 0, 0, 1, 3, 0, 0, 0]
+    );
+    let s2: SkipField = from_slice(&bytes, false).unwrap();
+    assert_eq!(s.f1, s2.f1);
+    assert_eq!(s.f2, s2.f2);
+    // the ignored value is default one
+    assert_eq!(s.ignore, 2);
+    assert_eq!(s2.ignore, 0);
+}
