@@ -1,6 +1,7 @@
 #![doc(hidden)]
 #![allow(clippy::all)]
 #![allow(unused_imports)]
+#![allow(dead_code)]
 pub mod ckb_types;
 pub mod new;
 pub mod old;

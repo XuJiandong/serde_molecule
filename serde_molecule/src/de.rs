@@ -5,6 +5,7 @@
 use crate::{
     error::{Error, Result},
     molecule::{disassemble_fixvec, disassemble_table, unpack_number},
+    struct_serde::MoleculeStructDeserializer,
 };
 use serde::de::{self, value::U64Deserializer};
 
@@ -12,7 +13,7 @@ use serde::de::{self, value::U64Deserializer};
 pub(crate) const DYNVEC_STR: &str = "__dyn_vec__";
 
 /// A structure that deserializes molecule into Rust values.
-pub(crate) struct MoleculeDeserializer<'de> {
+pub struct MoleculeDeserializer<'de> {
     data: &'de [u8],
 }
 
@@ -623,7 +624,7 @@ impl<'de> de::EnumAccess<'de> for UnitVariantAccess<'de> {
     where
         V: de::DeserializeSeed<'de>,
     {
-        todo!()
+        Err(Error::Unimplemented)
     }
 }
 
@@ -659,12 +660,20 @@ impl<'de> de::VariantAccess<'de> for UnitVariantAccess<'de> {
 //////////////////////////////////////////////////////////////////////////////
 /// Deserialize an instance of type `T` from bytes of molecule.
 ///
-pub fn from_slice<'a, T>(v: &'a [u8]) -> Result<T>
+/// Arguments
+/// * is_struct - mapping to molecule struct. Set to false to map to molecule
+/// table.
+pub fn from_slice<'a, T>(v: &'a [u8], is_struct: bool) -> Result<T>
 where
     T: de::Deserialize<'a>,
 {
-    let mut de = MoleculeDeserializer::new(v);
-    let value = de::Deserialize::deserialize(&mut de)?;
-    // de.end()?;
-    Ok(value)
+    if is_struct {
+        let mut de = MoleculeStructDeserializer::new(v.to_vec());
+        let value = de::Deserialize::deserialize(&mut de)?;
+        Ok(value)
+    } else {
+        let mut de = MoleculeDeserializer::new(v);
+        let value = de::Deserialize::deserialize(&mut de)?;
+        Ok(value)
+    }
 }

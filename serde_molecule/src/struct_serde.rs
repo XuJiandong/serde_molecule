@@ -28,8 +28,8 @@ where
     T::deserialize(&mut de).map_err(|e| de::Error::custom(format!("{}", e)))
 }
 
-struct CollectData {
-    data: Vec<u8>,
+pub struct CollectData {
+    pub data: Vec<u8>,
 }
 
 impl<'de> Deserialize<'de> for CollectData {
@@ -41,7 +41,7 @@ impl<'de> Deserialize<'de> for CollectData {
         impl<'de> Visitor<'de> for _Visitor {
             type Value = CollectData;
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("a dynvec")
+                formatter.write_str("a CollectData")
             }
             fn visit_bytes<E>(self, slice: &[u8]) -> Result<Self::Value, E>
             where

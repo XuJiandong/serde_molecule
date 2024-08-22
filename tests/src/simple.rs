@@ -20,13 +20,13 @@ fn test_ser_struct1() {
 fn test_de_struct1() {
     let new_value = new_default::DEFAULT_STRUCT1.clone();
     let new_vec = to_vec(&new_value, false).unwrap();
-    let new_value2: Struct1 = from_slice(&new_vec).unwrap();
+    let new_value2: Struct1 = from_slice(&new_vec, false).unwrap();
     assert_eq!(new_value, new_value2);
 
     let mut wrong_vec = new_vec.clone();
     let l = wrong_vec.len();
     wrong_vec[l - 1] ^= 1;
-    let new_value2: Struct1 = from_slice(&wrong_vec).unwrap();
+    let new_value2: Struct1 = from_slice(&wrong_vec, false).unwrap();
     assert_ne!(new_value, new_value2);
 }
 

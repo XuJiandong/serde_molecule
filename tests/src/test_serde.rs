@@ -48,6 +48,12 @@ struct Struct1 {
     pub f12: Union0,
 }
 
+fn test_once(value: &Struct1) {
+    let bytes = to_vec(&value, false).unwrap();
+    let value2 = from_slice(&bytes, false).unwrap();
+    assert_eq!(value, &value2);
+}
+
 #[test]
 fn test_serde_1() {
     let mut value = Struct1::default();
@@ -67,7 +73,13 @@ fn test_serde_1() {
     value.f11.insert(2, "hi2".into());
     value.f11.insert(100, "hi100".into());
     value.f12 = Union0::B("hello".into());
-    let bytes = to_vec(&value, false).unwrap();
-    let value2 = from_slice(&bytes).unwrap();
-    assert_eq!(value, value2);
+    test_once(&value);
+    value.f12 = Union0::C([1, 2, 3]);
+    test_once(&value);
+    value.f8 = vec![];
+    test_once(&value);
+    value.f8 = vec![vec![]];
+    test_once(&value);
+    value.f8 = vec![vec![], vec![1, 2, 3]];
+    test_once(&value);
 }
