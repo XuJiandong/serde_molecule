@@ -1,6 +1,6 @@
 [package]
 name = "serde_molecule"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["xjd <lynndon@gmail.com>"]
 categories = ["encoding", "parser-implementations", "no-std"]
 description = "A molecule serialization file format on CKB"
@@ -9,14 +9,9 @@ keywords = ["molecule", "serde", "serialization", "CKB"]
 readme = "../README.md"
 
 [dependencies]
-serde = { version = "1.0.194", default-features = false }
+serde = { version = "1.0.208", default-features = false }
 
 [dev-dependencies]
-serde = { version = "1.0.194", features = ["derive"] }
-serde_bytes = "0.11.10"
-serde_derive = "1.0.166"
-serde_stacker = "0.1.8"
-trybuild = { version = "1.0.81", features = ["diff"] }
 
 [features]
 default = ["std"]

@@ -1,17 +1,19 @@
-use serde::ser;
+use serde::Deserialize;
 use serde::Serialize;
+use serde::{de, ser};
+use serde_molecule::de::MoleculeDeserializer;
 use serde_molecule::dynvec_serde;
-use serde_molecule::struct_serde;
+use serde_molecule::struct_serde::{self, CollectData};
 use serde_molecule::to_vec;
 use std::collections::BTreeMap;
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub struct Struct1 {
     pub f1: u8,
     pub f2: u16,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub struct Table1 {
     pub f1: u8,
     pub f2: u16,
@@ -35,41 +37,4 @@ pub struct Table1 {
 pub enum Enum1 {
     U16(u16),
     U32(u32),
-}
-
-// molecule schemas:
-// union EnumCustomizedId {
-//     Struct1: 4278190081,
-//     Table1:  4278190082,
-// }
-//
-pub enum EnumCustomizedId {
-    S1(Struct1),
-    T1(Table1),
-}
-
-impl Serialize for EnumCustomizedId {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        match self {
-            EnumCustomizedId::S1(s1) => {
-                let mut data: Vec<u8> = (4278190081u32).to_le_bytes().into();
-                data.extend(
-                    to_vec(s1, true)
-                        .map_err(|_| ser::Error::custom("failed to serialized Struct1"))?,
-                );
-                serializer.serialize_bytes(&data)
-            }
-            EnumCustomizedId::T1(t1) => {
-                let mut data: Vec<u8> = (4278190082u32).to_le_bytes().into();
-                data.extend(
-                    to_vec(t1, false)
-                        .map_err(|_| ser::Error::custom("failed to serialize Table1"))?,
-                );
-                serializer.serialize_bytes(&data)
-            }
-        }
-    }
 }

@@ -10,11 +10,15 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
+pub use crate::de::from_slice;
 pub use crate::error::{Error, Result};
 pub use crate::ser::to_vec;
 
+pub mod de;
 pub mod dynvec_serde;
 pub mod error;
 pub mod molecule;
 pub mod ser;
 pub mod struct_serde;
+#[cfg(test)]
+mod tests;

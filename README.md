@@ -10,23 +10,31 @@ Serde.
 ## How to use
 Here is a simple case about how to use:
 ```rust
-use serde::Serialize;
-use serde_molecule::to_vec;
+use serde::{Serialize, Deserialize};
+use serde_molecule::{to_vec, from_slice};
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Table1 {
     pub f1: u8,
     pub f2: u16,
 }
 
 fn main() {
-    let s = Table1{f1: 0, f2: 0};
-    let data = to_vec(&s, false).unwrap();
+    let t1 = Table1{f1: 0, f2: 0};
+    // serialize
+    let bytes = to_vec(&t1, false).unwrap();
+    // deserialize
+    let t2: Table1 = from_slice(&bytes, false).unwrap();
+    assert_eq!(t1.f1, t2.f1);
 }
 ```
-
-The first step is to annotate the types with `#[derive(Serialize)]`. After that,
-use `to_vec` to serialize. 
+First step is to add dependency in Cargo.toml:
+```toml
+serde = { version = "???", features = ["derive"] }
+serde_molecule = { version = "???" }
+```
+Then to annotate the types with `#[derive(Serialize, Deserialize)]`. After that,
+use `to_vec` or `from_slice` to serialize/deserialize. 
 
 ## Types mapping
 
@@ -36,8 +44,10 @@ Rust types are mapping to molecule types, according to the [RFC](https://github.
 | --------- | ------------- | ---------- |
 | i8,u8     | byte          | yes |
 | i16, u16, i32, u32, i64, u64, i128, u128 | array | yes |
-| [u8; N]   | array | yes |
-| [T; N]    | array | yes |
+| f32       | array([byte; 4]) | yes |
+| f64       | array([byte; 8]) | yes |
+| [u8; N]   | array([byte; N]) | yes |
+| [T; N]    | array([T; N]) | yes |
 | Vec<T>    | fixvec | no |
 | struct     | table | no |
 | #[serde(with = "struct_serde")] | struct | yes |
@@ -59,7 +69,7 @@ fixed size, it should be annotated with `#[serde(with = "dynvec_serde")]`:
 
 ```rust,ignore
 use serde_molecule::dynvec_serde;
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 struct RawTransaction {
     // ...
     #[serde(with = "dynvec_serde")]
@@ -72,7 +82,7 @@ struct, we should annotate it explicitly.
 ```rust,ignore
 use serde_molecule::struct_serde;
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct CellInput {
     pub since: u64,
     #[serde(with = "struct_serde")]
@@ -80,9 +90,9 @@ pub struct CellInput {
 }
 ```
 
-If the top-level type is a molecule struct, the second argument to `to_vec`
-should be `true`. If the value is `false`, the top-level type is considered a
-molecule table.
+If the top-level type is a molecule struct, the second argument to `to_vec` or
+`from_slice` should be `true`. If the value is `false`, the top-level type is
+considered a molecule table.
 
 
 ## Map
@@ -99,7 +109,18 @@ It is not recommended to use HashMap because its key-value pairs are stored in
 arbitrary order.
 
 ## Union with customized id
-For molecule union with customized id, see [example with EnumCustomizedId](./tests/src/new/test1.rs).
+For molecule union with customized id, see [example](./examples/serde_molecule_customized_union_id).
+
+## no_std support
+Set the `default-features` of both `serde_molecule` and `serde` to `false`.
+Then, enable the `alloc` feature for `serde_molecule` and the `derive` feature
+for `serde`. See the example below:
+
+```toml
+serde_molecule = { version = "x.x.x", default-features = false, features = ["alloc"] }
+serde = { version = "x.x.x", default-features = false, features = ["derive"] }
+```
+See [example](./examples/serde_molecule_nostd).
 
 ## Example
-Here is an example of [CKB types](./tests/src/ckb_types.rs)
+Here is an example definition of [CKB types](./tests/src/ckb_types.rs).

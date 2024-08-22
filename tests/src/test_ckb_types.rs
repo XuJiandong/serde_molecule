@@ -1,20 +1,11 @@
-#[cfg(test)]
 use crate::ckb_types::CellOutput;
-#[cfg(test)]
 use crate::ckb_types::Script;
-#[cfg(test)]
 use crate::ckb_types::Transaction;
-#[cfg(test)]
 use crate::ckb_types::WitnessArgs;
-#[cfg(test)]
 use ckb_gen_types::packed;
-#[cfg(test)]
 use ckb_gen_types::packed::CellOutputVec;
-#[cfg(test)]
 use ckb_gen_types::prelude::*;
-#[cfg(test)]
 use molecule::bytes;
-#[cfg(test)]
 use serde_molecule::to_vec;
 
 #[test]

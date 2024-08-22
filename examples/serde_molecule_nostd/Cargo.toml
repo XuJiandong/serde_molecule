@@ -1,0 +1,10 @@
+[package]
+name = "serde_molecule_nostd"
+version = "1.0.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde_molecule = { path = "../../serde_molecule", default-features = false, features = ["alloc"] }
+serde = { version = "1.0.208", default-features = false, features = ["derive"] }
