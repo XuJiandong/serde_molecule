@@ -1,25 +1,25 @@
 // Rust serde_molecule implementation of following schemas:
 // https://github.com/nervosnetwork/ckb/blob/develop/util/gen-types/schemas/blockchain.mol
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_molecule::{dynvec_serde, struct_serde};
 
 type ProposalShortId = [u8; 10];
 
-#[derive(Serialize, Default)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct Script {
     pub code_hash: [u8; 32],
     pub hash_type: u8,
     pub args: Vec<u8>,
 }
 
-#[derive(Serialize, Default)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct OutPoint {
     pub tx_hash: [u8; 32],
     pub index: u32,
 }
 
-#[derive(Serialize, Default)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct CellInput {
     pub since: u64,
     // By default, every field is considered as molecule table.
@@ -28,21 +28,21 @@ pub struct CellInput {
     pub previous_output: OutPoint,
 }
 
-#[derive(Serialize, Default)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct CellOutput {
     pub capacity: u64,
     pub lock: Script,
     pub type_: Option<Script>,
 }
 
-#[derive(Serialize, Default)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct CellDep {
     #[serde(with = "struct_serde")]
     pub out_point: OutPoint,
     pub dep_type: u8,
 }
 
-#[derive(Serialize, Default)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct RawTransaction {
     pub version: u32,
     // By default, the `Vec` is serialized into `fixvec`.
@@ -58,14 +58,14 @@ pub struct RawTransaction {
     pub outputs_data: Vec<Vec<u8>>,
 }
 
-#[derive(Serialize, Default)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct Transaction {
     pub raw: RawTransaction,
     #[serde(with = "dynvec_serde")]
     pub witnesses: Vec<Vec<u8>>,
 }
 
-#[derive(Serialize, Default)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct RawHeader {
     pub version: u32,
     pub compact_target: u32,
@@ -79,20 +79,20 @@ pub struct RawHeader {
     pub dao: [u8; 32],
 }
 
-#[derive(Serialize, Default)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct Header {
     #[serde(with = "struct_serde")]
     pub raw: RawHeader,
     pub nonce: u128,
 }
 
-#[derive(Serialize, Default)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct UncleBlock {
     pub header: Header,
     pub proposals: Vec<ProposalShortId>,
 }
 
-#[derive(Serialize, Default)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct Block {
     #[serde(with = "struct_serde")]
     pub header: Header,
@@ -103,7 +103,7 @@ pub struct Block {
     pub proposals: Vec<ProposalShortId>,
 }
 
-#[derive(Serialize, Default)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct BlockV1 {
     #[serde(with = "struct_serde")]
     pub header: Header,
@@ -115,13 +115,13 @@ pub struct BlockV1 {
     pub extension: Vec<u8>,
 }
 
-#[derive(Serialize, Default)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct CellbaseWitness {
     pub lock: Script,
     pub message: Vec<u8>,
 }
 
-#[derive(Serialize, Default)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct WitnessArgs {
     pub lock: Option<Vec<u8>>,
     pub input_type: Option<Vec<u8>>,

@@ -1,7 +1,4 @@
 //! Deserialize molecule data to a Rust data structure.
-// TODO: remove it
-#![allow(unused_variables)]
-#![allow(dead_code)]
 use crate::{
     error::{Error, Result},
     molecule::{disassemble_fixvec, disassemble_table, unpack_number},
@@ -11,6 +8,27 @@ use serde::de::{self, value::U64Deserializer};
 
 //////////////////////////////////////////////////////////////////////////////
 pub(crate) const DYNVEC_STR: &str = "__dyn_vec__";
+
+//////////////////////////////////////////////////////////////////////////////
+/// Deserialize an instance of type `T` from bytes of molecule.
+///
+/// Arguments
+/// * is_struct - mapping to molecule struct. Set to false to map to molecule
+/// table.
+pub fn from_slice<'a, T>(v: &'a [u8], is_struct: bool) -> Result<T>
+where
+    T: de::Deserialize<'a>,
+{
+    if is_struct {
+        let mut de = MoleculeStructDeserializer::new(v.to_vec());
+        let value = de::Deserialize::deserialize(&mut de)?;
+        Ok(value)
+    } else {
+        let mut de = MoleculeDeserializer::new(v);
+        let value = de::Deserialize::deserialize(&mut de)?;
+        Ok(value)
+    }
+}
 
 /// A structure that deserializes molecule into Rust values.
 pub struct MoleculeDeserializer<'de> {
@@ -63,7 +81,7 @@ impl<'de> MoleculeDeserializer<'de> {
 impl<'de, 'a> de::Deserializer<'de> for &'a mut MoleculeDeserializer<'de> {
     type Error = Error;
 
-    fn deserialize_any<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_any<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
@@ -301,7 +319,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut MoleculeDeserializer<'de> {
         visitor.visit_unit()
     }
 
-    fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_ignored_any<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
@@ -388,7 +406,8 @@ impl<'de, 'a> de::SeqAccess<'de> for FixvecAccess<'de, 'a> {
         if self.current_index < self.parts.len() {
             let part = self.parts[self.current_index];
             self.current_index += 1;
-            let mut de = MoleculeDeserializer::new(part);
+            // elements in fixvec should be fixed(struct, primitive type, etc)
+            let mut de = MoleculeStructDeserializer::new(part.to_vec());
             let value = seed.deserialize(&mut de)?;
             Ok(Some(value))
         } else {
@@ -405,18 +424,18 @@ struct TableAccess<'de, 'a> {
 }
 
 impl<'de, 'a> TableAccess<'de, 'a> {
-    fn new(de: &'a mut MoleculeDeserializer<'de>, total_count: usize) -> Self {
+    fn new(de: &'a mut MoleculeDeserializer<'de>, count: usize) -> Self {
         TableAccess {
             de,
             current_index: 0,
-            count: total_count,
+            count,
             parts: vec![],
         }
     }
     fn parse(&mut self) -> Result<()> {
         self.parts = disassemble_table(self.de.data)?;
-        // TODO: compatible
-        if self.parts.len() != self.count {
+        // always enable compatible for molecule table
+        if self.parts.len() < self.count {
             return Err(Error::MismatchedTableFieldCount);
         }
         Ok(())
@@ -430,7 +449,7 @@ impl<'de, 'a> de::MapAccess<'de> for TableAccess<'de, 'a> {
     where
         K: de::DeserializeSeed<'de>,
     {
-        if self.current_index < self.parts.len() {
+        if self.current_index < self.count {
             let de = U64Deserializer::<Error>::new(self.current_index as u64);
             Ok(Some(seed.deserialize(de)?))
         } else {
@@ -603,77 +622,5 @@ impl<'de, 'a> de::VariantAccess<'de> for UnionAccess<'de, 'a> {
         V: de::Visitor<'de>,
     {
         de::Deserializer::deserialize_struct(self.de, "", fields, visitor)
-    }
-}
-
-struct UnitVariantAccess<'de> {
-    de: &'de mut MoleculeDeserializer<'de>,
-}
-
-impl<'de> UnitVariantAccess<'de> {
-    fn new(de: &'de mut MoleculeDeserializer<'de>) -> Self {
-        UnitVariantAccess { de }
-    }
-}
-
-impl<'de> de::EnumAccess<'de> for UnitVariantAccess<'de> {
-    type Error = Error;
-    type Variant = Self;
-
-    fn variant_seed<V>(self, seed: V) -> Result<(V::Value, Self)>
-    where
-        V: de::DeserializeSeed<'de>,
-    {
-        Err(Error::Unimplemented)
-    }
-}
-
-impl<'de> de::VariantAccess<'de> for UnitVariantAccess<'de> {
-    type Error = Error;
-
-    fn unit_variant(self) -> Result<()> {
-        Ok(())
-    }
-
-    fn newtype_variant_seed<T>(self, _seed: T) -> Result<T::Value>
-    where
-        T: de::DeserializeSeed<'de>,
-    {
-        Err(Error::Unimplemented)
-    }
-
-    fn tuple_variant<V>(self, _len: usize, _visitor: V) -> Result<V::Value>
-    where
-        V: de::Visitor<'de>,
-    {
-        Err(Error::Unimplemented)
-    }
-
-    fn struct_variant<V>(self, _fields: &'static [&'static str], _visitor: V) -> Result<V::Value>
-    where
-        V: de::Visitor<'de>,
-    {
-        Err(Error::Unimplemented)
-    }
-}
-
-//////////////////////////////////////////////////////////////////////////////
-/// Deserialize an instance of type `T` from bytes of molecule.
-///
-/// Arguments
-/// * is_struct - mapping to molecule struct. Set to false to map to molecule
-/// table.
-pub fn from_slice<'a, T>(v: &'a [u8], is_struct: bool) -> Result<T>
-where
-    T: de::Deserialize<'a>,
-{
-    if is_struct {
-        let mut de = MoleculeStructDeserializer::new(v.to_vec());
-        let value = de::Deserialize::deserialize(&mut de)?;
-        Ok(value)
-    } else {
-        let mut de = MoleculeDeserializer::new(v);
-        let value = de::Deserialize::deserialize(&mut de)?;
-        Ok(value)
     }
 }

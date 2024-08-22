@@ -1,7 +1,7 @@
-use std::collections::{BTreeMap, LinkedList};
-
+use crate::test_once;
 use serde::{Deserialize, Serialize};
 use serde_molecule::{dynvec_serde, from_slice, struct_serde, to_vec};
+use std::collections::{BTreeMap, LinkedList};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Default, Debug)]
 struct StructInner {
@@ -46,12 +46,6 @@ struct Struct1 {
     pub f10: Struct0,
     pub f11: BTreeMap<u32, String>,
     pub f12: Union0,
-}
-
-fn test_once(value: &Struct1) {
-    let bytes = to_vec(&value, false).unwrap();
-    let value2 = from_slice(&bytes, false).unwrap();
-    assert_eq!(value, &value2);
 }
 
 #[test]
