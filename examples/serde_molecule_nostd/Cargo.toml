@@ -13,3 +13,10 @@ edition = "2021"
 serde_molecule = { path = "../../serde_molecule", default-features = false, features = ["alloc"] }
 serde = { version = "1.0.208", default-features = false, features = ["derive"] }
 ckb-std = { version = "0.15.3", default-features = false, features = ["allocator", "ckb-types"] }
+
+[profile.release]
+overflow-checks = true
+opt-level = 3
+panic = 'abort'
+strip = true
+lto = true
