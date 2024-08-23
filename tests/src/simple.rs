@@ -277,9 +277,6 @@ fn test_block_v1() {
         0xe3, 0x62,
     ];
     let b0: crate::ckb_types::BlockV1 = serde_molecule::from_slice(&bytes, false).unwrap();
-    // should be 0x47aa3c98301290670000000462240106
-    //          since = 1917d2b29cf1904fc3600000000
-    println!("since = {:0x}", b0.header.nonce);
     let b1 = serde_molecule::to_vec(&b0, false).unwrap();
     assert_eq!(b1.len(), 2807);
     let b2: crate::ckb_types::BlockV1 = serde_molecule::from_slice(&b1, false).unwrap();

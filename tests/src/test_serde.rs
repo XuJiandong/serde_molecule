@@ -144,4 +144,6 @@ fn test_nested_struct() {
     let bytes = to_vec(&s2, false).unwrap();
     let value2: Struct2 = from_slice(&bytes, false).unwrap();
     assert_eq!(value2.s0.f4, s2.s0.f4);
+    assert_eq!(value2.s0.f4, 0x1234);
+    assert_eq!(value2.f1, 0x12345678);
 }

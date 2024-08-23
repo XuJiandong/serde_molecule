@@ -27,7 +27,8 @@ where
     // This is a tricky approach: use this method to indicate that it is the top
     // level of the Molecule struct. When the inner `deserialize` is invoked, it
     // does not create a new instance. This ensures that the `index` status
-    // propagates across the calling functions.
+    // propagates across the calling functions. When it is MoleculeDeserializer,
+    // it defaults to true, which is exactly what we want.
     if deserializer.is_human_readable() {
         let data = CollectData::deserialize(deserializer)?.data;
         let mut de = MoleculeStructDeserializer::new(data);
@@ -70,16 +71,11 @@ impl<'de> Deserialize<'de> for CollectData {
 pub(crate) struct MoleculeStructDeserializer {
     data: Vec<u8>,
     index: usize,
-    top_level_struct: bool,
 }
 
 impl MoleculeStructDeserializer {
     pub fn new(data: Vec<u8>) -> Self {
-        MoleculeStructDeserializer {
-            data,
-            index: 0,
-            top_level_struct: true,
-        }
+        MoleculeStructDeserializer { data, index: 0 }
     }
 }
 
@@ -118,7 +114,7 @@ impl<'de, 'a> Deserializer<'de> for &'a mut MoleculeStructDeserializer {
     type Error = Error;
 
     fn is_human_readable(&self) -> bool {
-        self.top_level_struct
+        false
     }
     fn deserialize_any<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
@@ -321,7 +317,6 @@ impl<'de, 'a> Deserializer<'de> for &'a mut MoleculeStructDeserializer {
     where
         V: Visitor<'de>,
     {
-        self.top_level_struct = false;
         visitor.visit_map(StructAccess::new(self, fields.len()))
     }
     fn deserialize_enum<V>(
