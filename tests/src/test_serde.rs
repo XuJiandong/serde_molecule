@@ -15,6 +15,7 @@ struct Struct0 {
     f2: [u8; 3],
     #[serde(with = "struct_serde")]
     f3: StructInner,
+    f4: u32,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
@@ -119,4 +120,28 @@ fn test_skip_field() {
     // the ignored value is default one
     assert_eq!(s.ignore, 2);
     assert_eq!(s2.ignore, 0);
+}
+
+#[derive(Serialize, Deserialize, Clone, Default, PartialEq, Debug)]
+struct Struct2 {
+    #[serde(with = "struct_serde")]
+    pub s0: Struct0,
+    pub f1: u32,
+}
+
+#[test]
+fn test_nested_struct() {
+    let s2 = Struct2 {
+        s0: Struct0 {
+            f0: 0x12,
+            f1: 0x34,
+            f2: [5, 6, 7],
+            f3: StructInner { f0: 0x87654321 },
+            f4: 0x1234,
+        },
+        f1: 0x12345678,
+    };
+    let bytes = to_vec(&s2, false).unwrap();
+    let value2: Struct2 = from_slice(&bytes, false).unwrap();
+    assert_eq!(value2.s0.f4, s2.s0.f4);
 }

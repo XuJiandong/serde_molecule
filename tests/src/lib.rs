@@ -18,3 +18,16 @@ pub fn test_once<V: Serialize + DeserializeOwned>(value: &V) {
     let bytes2 = to_vec(&value2, false).unwrap();
     assert_eq!(bytes, bytes2);
 }
+
+pub fn compare_slice(s1: &[u8], s2: &[u8]) {
+    if s1.len() != s2.len() {
+        println!("length mismatched: {} vs {}", s1.len(), s2.len());
+    }
+    let min = s1.len().min(s2.len());
+    for i in 0..min {
+        if s1[i] != s2[i] {
+            println!("byte at index {} are mismatched: {} {}", i, s1[i], s2[i]);
+            assert!(false);
+        }
+    }
+}
