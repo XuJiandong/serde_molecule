@@ -1,7 +1,11 @@
 //! Serialize a Rust data structure into molecule data.
 use crate::error::{Error, Result};
 use crate::molecule::{assemble_fixvec, assemble_struct, assemble_table};
+use alloc::vec;
 use alloc::vec::Vec;
+
+#[cfg(not(feature = "std"))]
+use crate::alloc::string::ToString;
 use serde::ser::{self, Serialize};
 
 /// Serialize the given data structure to byte vector.

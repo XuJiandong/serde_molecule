@@ -1,19 +1,18 @@
 #![no_std]
+#![no_main]
 
-use serde::{Deserialize, Serialize};
-use serde_molecule::{from_slice, to_vec};
+mod entry;
+mod error;
 
-#[derive(Serialize, Deserialize)]
-pub struct Table1 {
-    pub f1: u8,
-    pub f2: u16,
-}
+use ckb_std::default_alloc;
+ckb_std::entry!(program_entry);
+default_alloc!(4 * 1024, 1400 * 1024, 64);
 
-fn main() {
-    let t1 = Table1 { f1: 0, f2: 0 };
-    // serialize
-    let bytes = to_vec(&t1, false).unwrap();
-    // deserialize
-    let t2: Table1 = from_slice(&bytes, false).unwrap();
-    assert_eq!(t1.f1, t2.f1);
+use entry::entry;
+
+pub fn program_entry() -> i8 {
+    match entry() {
+        Ok(_) => 0,
+        Err(e) => e as i8,
+    }
 }

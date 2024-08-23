@@ -2,6 +2,7 @@ use core::fmt;
 
 use crate::error::Error;
 use crate::ser::to_vec;
+use alloc::vec::Vec;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde::{
@@ -25,7 +26,7 @@ where
 {
     let data = CollectData::deserialize(deserializer)?.data;
     let mut de = MoleculeStructDeserializer::new(data);
-    T::deserialize(&mut de).map_err(|e| de::Error::custom(format!("{}", e)))
+    T::deserialize(&mut de).map_err(de::Error::custom)
 }
 
 pub struct CollectData {
