@@ -1,7 +1,5 @@
-#[cfg(not(feature = "std"))]
-use crate::alloc::string::ToString;
-#[cfg(not(feature = "std"))]
 use alloc::string::String;
+use alloc::string::ToString;
 use core::fmt::{self, Debug, Display};
 use core::result;
 use serde::{de, ser};

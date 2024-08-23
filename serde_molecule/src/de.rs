@@ -4,12 +4,10 @@ use crate::{
     molecule::{disassemble_fixvec, disassemble_table, unpack_number},
     struct_serde::MoleculeStructDeserializer,
 };
+use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 use serde::de::{self, value::U64Deserializer};
-
-#[cfg(not(feature = "std"))]
-use alloc::string::String;
 
 //////////////////////////////////////////////////////////////////////////////
 pub(crate) const DYNVEC_STR: &str = "__dyn_vec__";
