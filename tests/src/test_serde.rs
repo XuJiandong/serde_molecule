@@ -1,7 +1,7 @@
-use std::collections::{BTreeMap, LinkedList};
-
+use crate::test_once;
 use serde::{Deserialize, Serialize};
 use serde_molecule::{dynvec_serde, from_slice, struct_serde, to_vec};
+use std::collections::{BTreeMap, LinkedList};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Default, Debug)]
 struct StructInner {
@@ -48,12 +48,6 @@ struct Struct1 {
     pub f12: Union0,
 }
 
-fn test_once(value: &Struct1) {
-    let bytes = to_vec(&value, false).unwrap();
-    let value2 = from_slice(&bytes, false).unwrap();
-    assert_eq!(value, &value2);
-}
-
 #[test]
 fn test_serde_1() {
     let mut value = Struct1::default();
@@ -82,4 +76,47 @@ fn test_serde_1() {
     test_once(&value);
     value.f8 = vec![vec![], vec![1, 2, 3]];
     test_once(&value);
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
+enum Union1 {
+    A,
+    B,
+    C,
+}
+#[test]
+fn test_unit_variant() {
+    let u = Union1::C;
+    let bytes = to_vec(&u, false).unwrap();
+    assert_eq!(bytes, vec![2, 0, 0, 0]);
+    let u2: Union1 = from_slice(&bytes, false).unwrap();
+    assert_eq!(u, u2);
+}
+
+#[derive(Serialize, Deserialize, PartialEq)]
+struct SkipField {
+    f1: u8,
+    #[serde(skip)]
+    ignore: u8,
+    f2: u32,
+}
+
+#[test]
+fn test_skip_field() {
+    let s = SkipField {
+        f1: 1,
+        ignore: 2,
+        f2: 3,
+    };
+    let bytes = to_vec(&s, false).unwrap();
+    assert_eq!(
+        bytes,
+        vec![17, 0, 0, 0, 12, 0, 0, 0, 13, 0, 0, 0, 1, 3, 0, 0, 0]
+    );
+    let s2: SkipField = from_slice(&bytes, false).unwrap();
+    assert_eq!(s.f1, s2.f1);
+    assert_eq!(s.f2, s2.f2);
+    // the ignored value is default one
+    assert_eq!(s.ignore, 2);
+    assert_eq!(s2.ignore, 0);
 }

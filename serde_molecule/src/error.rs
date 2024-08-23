@@ -18,6 +18,10 @@ pub enum Error {
     InvalidArray,
     InvalidStructField,
     InvalidMap,
+    InvalidTable,
+    InvalidTableLength,
+    InvalidTableHeader,
+    InvalidTableCount,
 }
 
 pub type Result<T> = result::Result<T, Error>;

@@ -103,22 +103,22 @@ pub fn disassemble_table(data: &[u8]) -> Result<Vec<&[u8]>, Error> {
     let mut result = vec![];
     let total_size = unpack_number(data, 0)?;
     if data.len() != total_size {
-        return Err(Error::InvalidDynvec);
+        return Err(Error::InvalidTableLength);
     }
     if total_size == NUMBER_SIZE {
         return Ok(result);
     }
     if total_size < NUMBER_SIZE * 2 {
-        return Err(Error::InvalidDynvec);
+        return Err(Error::InvalidTableLength);
     }
     let mut cur = 0;
     cur += NUMBER_SIZE;
     let first_offset = unpack_number(data, cur)?;
     if first_offset % NUMBER_SIZE != 0 || first_offset < NUMBER_SIZE * 2 {
-        return Err(Error::InvalidDynvec);
+        return Err(Error::InvalidTableHeader);
     }
     if total_size < first_offset {
-        return Err(Error::InvalidDynvec);
+        return Err(Error::InvalidTableHeader);
     }
     let count = first_offset / 4 - 1;
     let mut last_offset = first_offset;
@@ -127,10 +127,10 @@ pub fn disassemble_table(data: &[u8]) -> Result<Vec<&[u8]>, Error> {
     for _ in 1..count {
         offset = unpack_number(data, cur)?;
         if last_offset > offset {
-            return Err(Error::InvalidDynvec);
+            return Err(Error::InvalidTable);
         }
         if offset > data.len() {
-            return Err(Error::InvalidDynvec);
+            return Err(Error::InvalidTable);
         }
         result.push(&data[last_offset..offset]);
         last_offset = offset;
