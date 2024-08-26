@@ -52,30 +52,83 @@ struct Struct1 {
 #[test]
 fn test_serde_1() {
     let mut value = Struct1::default();
+
+    // Test case 1: Basic initialization
     value.f1 = 100;
     value.f2 = 200;
     value.f3 = [1, 2, 3];
     value.f4 = [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5]];
     value.f5 = vec![1, 2, 3];
     value.f6 = String::from("hello");
+    value.f7 = Some(42);
     value.f8 = vec![vec![1, 2, 3], vec![4, 5, 6], vec![]];
-    value.f9 = [[1, 2, 3], [4, 5, 6]].into();
+    value.f9 = LinkedList::from([[1, 2, 3], [4, 5, 6]]);
     value.f10.f0 = 1;
-    value.f10.f2[0] = 10;
-    value.f10.f2[1] = 20;
-    value.f10.f2[2] = 20;
+    value.f10.f1 = 1000;
+    value.f10.f2 = [10, 20, 30];
+    value.f10.f3.f0 = 12345;
+    value.f10.f4 = 54321;
     value.f11.insert(1, "hi".into());
     value.f11.insert(2, "hi2".into());
     value.f11.insert(100, "hi100".into());
     value.f12 = Union0::B("hello".into());
     test_once(&value);
+
+    // Test case 2: Modifying Union0
+    value.f12 = Union0::A(42);
+    test_once(&value);
     value.f12 = Union0::C([1, 2, 3]);
     test_once(&value);
+
+    // Test case 3: Empty and nested vectors
     value.f8 = vec![];
     test_once(&value);
     value.f8 = vec![vec![]];
     test_once(&value);
     value.f8 = vec![vec![], vec![1, 2, 3]];
+    test_once(&value);
+    value.f8 = vec![vec![1], vec![1, 2], vec![1, 2, 3]];
+    test_once(&value);
+
+    // Test case 4: Modifying Option<u32>
+    value.f7 = None;
+    test_once(&value);
+    value.f7 = Some(0);
+    test_once(&value);
+
+    // Test case 5: Complex LinkedList
+    value.f9 = LinkedList::new();
+    test_once(&value);
+    value.f9.push_back([0, 0, 0]);
+    value.f9.push_back([255, 255, 255]);
+    test_once(&value);
+
+    // Test case 6: Complex BTreeMap
+    value.f11.clear();
+    test_once(&value);
+    value.f11.insert(0, "".into());
+    value.f11.insert(u32::MAX, "max".into());
+    test_once(&value);
+
+    // Test case 7: Edge cases for numeric fields
+    value.f1 = u8::MAX;
+    value.f2 = u16::MAX;
+    value.f10.f0 = u8::MIN;
+    value.f10.f1 = u64::MAX;
+    value.f10.f4 = u32::MIN;
+    test_once(&value);
+
+    // Test case 8: Long string
+    value.f6 = "a".repeat(1000);
+    test_once(&value);
+
+    // Test case 9: Mixed modifications
+    value.f3 = [255, 0, 255];
+    value.f4 = [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9]];
+    value.f5 = vec![100, 101, 102, 103, 104];
+    value.f7 = Some(999999);
+    value.f8 = vec![vec![255; 10], vec![128; 5], vec![0; 3]];
+    value.f12 = Union0::B("Mixed test case".into());
     test_once(&value);
 }
 

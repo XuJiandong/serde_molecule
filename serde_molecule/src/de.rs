@@ -10,7 +10,7 @@ use alloc::vec::Vec;
 use serde::de::{self, value::U64Deserializer};
 
 //////////////////////////////////////////////////////////////////////////////
-pub(crate) const DYNVEC_STR: &str = "__dyn_vec__";
+pub(crate) const DYNVEC_STR: &str = "$serde_molecule::DynVec";
 
 //////////////////////////////////////////////////////////////////////////////
 /// Deserialize an instance of type `T` from bytes of molecule.
