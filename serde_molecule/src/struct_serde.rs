@@ -2,6 +2,7 @@ use core::fmt;
 
 use crate::error::Error;
 use crate::ser::to_vec;
+use alloc::vec::Vec;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde::{
@@ -23,9 +24,18 @@ where
     D: Deserializer<'de>,
     T: DeserializeOwned,
 {
-    let data = CollectData::deserialize(deserializer)?.data;
-    let mut de = MoleculeStructDeserializer::new(data);
-    T::deserialize(&mut de).map_err(|e| de::Error::custom(format!("{}", e)))
+    // This is a tricky approach: use this method to indicate that it is the top
+    // level of the Molecule struct. When the inner `deserialize` is invoked, it
+    // does not create a new instance. This ensures that the `index` status
+    // propagates across the calling functions. When it is MoleculeDeserializer,
+    // it defaults to true, which is exactly what we want.
+    if deserializer.is_human_readable() {
+        let data = CollectData::deserialize(deserializer)?.data;
+        let mut de = MoleculeStructDeserializer::new(data);
+        T::deserialize(&mut de).map_err(de::Error::custom)
+    } else {
+        T::deserialize(deserializer)
+    }
 }
 
 pub struct CollectData {
@@ -103,6 +113,9 @@ impl MoleculeStructDeserializer {
 impl<'de, 'a> Deserializer<'de> for &'a mut MoleculeStructDeserializer {
     type Error = Error;
 
+    fn is_human_readable(&self) -> bool {
+        false
+    }
     fn deserialize_any<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,

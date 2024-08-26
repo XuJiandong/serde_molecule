@@ -98,25 +98,46 @@ fn test_simple_witnessargs() {
 fn test_variable_tx() {
     let mut tx = Transaction::default();
     test_once(&tx);
+
+    // Script and CellOutput
     let mut script = Script::default();
-    script.args = vec![];
+    script.args = vec![1, 2, 3];
+    script.code_hash = [5u8; 32];
+    script.hash_type = 1;
     let cell_output = CellOutput {
         capacity: 42,
         lock: script.clone(),
-        type_: None,
+        type_: Some(script.clone()),
     };
+
+    // OutPoint
     let out_point = OutPoint {
         tx_hash: [1u8; 32],
         index: 42,
     };
+
+    // Test with one output
     tx.raw.outputs.push(cell_output.clone());
     test_once(&tx);
+
+    // Test with multiple outputs
     tx.raw.outputs.push(cell_output.clone());
+    tx.raw.outputs.push(CellOutput {
+        capacity: 100,
+        lock: script.clone(),
+        type_: None,
+    });
     test_once(&tx);
+
+    // Test with empty witnesses
     tx.witnesses = vec![vec![]];
     test_once(&tx);
-    tx.witnesses = vec![vec![], vec![1, 2, 3], vec![]];
+
+    // Test with various witnesses
+    tx.witnesses = vec![vec![], vec![1, 2, 3], vec![], vec![4, 5, 6, 7]];
     test_once(&tx);
+
+    // Test with cell deps
     let cell_dep = CellDep {
         out_point: out_point.clone(),
         dep_type: 1,
@@ -124,10 +145,53 @@ fn test_variable_tx() {
     tx.raw.cell_deps = vec![cell_dep.clone(), cell_dep.clone()];
     test_once(&tx);
 
+    // Test with inputs
     let cell_input = CellInput {
         since: 42,
         previous_output: out_point.clone(),
     };
     tx.raw.inputs = vec![cell_input.clone(), cell_input.clone()];
+    test_once(&tx);
+
+    // Test with more complex scenario
+    tx.raw.version = 2;
+    tx.raw.cell_deps.push(CellDep {
+        out_point: OutPoint {
+            tx_hash: [2u8; 32],
+            index: 0,
+        },
+        dep_type: 0,
+    });
+    tx.raw.inputs.push(CellInput {
+        since: 100,
+        previous_output: OutPoint {
+            tx_hash: [3u8; 32],
+            index: 1,
+        },
+    });
+    tx.raw.outputs.push(CellOutput {
+        capacity: 200,
+        lock: Script {
+            code_hash: [4u8; 32],
+            hash_type: 2,
+            args: vec![7, 8, 9],
+        },
+        type_: None,
+    });
+    tx.witnesses.push(vec![10, 11, 12]);
+    test_once(&tx);
+
+    // Test with maximum values
+    tx.raw.version = u32::MAX;
+    tx.raw.cell_deps[0].dep_type = u8::MAX;
+    tx.raw.inputs[0].since = u64::MAX;
+    tx.raw.outputs[0].capacity = u64::MAX;
+    test_once(&tx);
+
+    // Test with empty vectors
+    tx.raw.cell_deps.clear();
+    tx.raw.inputs.clear();
+    tx.raw.outputs.clear();
+    tx.witnesses.clear();
     test_once(&tx);
 }

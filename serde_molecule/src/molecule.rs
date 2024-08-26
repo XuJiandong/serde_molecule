@@ -1,4 +1,6 @@
 use crate::error::Error;
+use alloc::vec;
+use alloc::vec::Vec;
 
 const NUMBER_SIZE: usize = 4;
 

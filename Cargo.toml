@@ -1,7 +1,5 @@
 [workspace]
 resolver = "2"
 
-members = [ "examples/serde_molecule_customized_union_id", "examples/serde_molecule_nostd",
-    "serde_molecule",
+members = [ "examples/serde_molecule_customized_union_id", "serde_molecule",
     "tests"]
-

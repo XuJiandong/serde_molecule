@@ -69,13 +69,11 @@ impl<'de> Deserialize<'de> for UnionCustomizedId {
 
         match id {
             4278190081u32 => {
-                let s1 = Struct1::deserialize(&mut de)
-                    .map_err(|e| de::Error::custom(format!("{}", e)))?;
+                let s1 = Struct1::deserialize(&mut de).map_err(de::Error::custom)?;
                 Ok(UnionCustomizedId::S1(s1))
             }
             4278190082u32 => {
-                let t1 = Table1::deserialize(&mut de)
-                    .map_err(|e| de::Error::custom(format!("{}", e)))?;
+                let t1 = Table1::deserialize(&mut de).map_err(de::Error::custom)?;
                 Ok(UnionCustomizedId::T1(t1))
             }
             _ => Err(de::Error::custom("invalid union id")),

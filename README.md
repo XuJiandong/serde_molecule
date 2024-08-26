@@ -112,15 +112,21 @@ arbitrary order.
 For molecule union with customized id, see [example](./examples/serde_molecule_customized_union_id).
 
 ## no_std support
-Set the `default-features` of both `serde_molecule` and `serde` to `false`.
-Then, enable the `alloc` feature for `serde_molecule` and the `derive` feature
-for `serde`. See the example below:
+
+To use this library in a `no_std` environment:
+
+1. Disable default features for both `serde_molecule` and `serde`
+2. Enable the `alloc` feature for `serde_molecule`
+3. Enable the `derive` feature for `serde`
+
+Add the following to your `Cargo.toml`:
 
 ```toml
 serde_molecule = { version = "x.x.x", default-features = false, features = ["alloc"] }
 serde = { version = "x.x.x", default-features = false, features = ["derive"] }
 ```
-See [example](./examples/serde_molecule_nostd).
+
+See the [no_std example](./examples/serde_molecule_nostd) for more details.
 
 ## Example
 Here is an example definition of [CKB types](./tests/src/ckb_types.rs).

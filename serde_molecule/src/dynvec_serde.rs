@@ -1,5 +1,7 @@
+use alloc::vec;
+use alloc::vec::Vec;
 use core::fmt;
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 use crate::to_vec;
 use crate::{de::DYNVEC_STR, molecule::assemble_table};

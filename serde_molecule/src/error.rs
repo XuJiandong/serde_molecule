@@ -1,8 +1,10 @@
+use alloc::string::String;
+use alloc::string::ToString;
+use core::fmt::{self, Debug, Display};
 use core::result;
 use serde::{de, ser};
 #[cfg(feature = "std")]
 use std::error;
-use std::fmt::{self, Debug, Display};
 
 #[derive(Debug)]
 pub enum Error {
@@ -47,6 +49,11 @@ impl de::StdError for Error {
 
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
+        match self {
+            Self::Message(m) => f.write_str(m),
+            _ => {
+                write!(f, "{:?}", self)
+            }
+        }
     }
 }

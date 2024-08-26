@@ -43,5 +43,7 @@ jobs:
         with:
           toolchain: 1.75.0
       - name: Run
-        run: make unit-tests
-
+        run: |
+          cd examples/serde_molecule_nostd; make prepare; cd ../..
+          make unit-tests
+          make example-tests
