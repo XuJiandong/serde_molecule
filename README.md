@@ -128,5 +128,26 @@ serde = { version = "x.x.x", default-features = false, features = ["derive"] }
 
 See the [no_std example](./examples/serde_molecule_nostd) for more details.
 
+## Big Array Support
+
+The Serde framework doesn't support arrays with element sizes greater than 32.
+See [this solution](https://github.com/est31/serde-big-array). This limitation
+can be addressed using a new `serde with` annotation (`big_array_serde`):
+
+```rust
+use serde::{Deserialize, Serialize};
+use serde_molecule::big_array_serde;
+
+#[derive(Serialize, Deserialize)]
+struct BigArray {
+    f1: u8,
+    #[serde(with = "big_array_serde")]
+    f2: [u8; 33],
+    #[serde(with = "big_array_serde")]
+    f3: [u8; 64],
+}
+```
+
+
 ## Example
 Here is an example definition of [CKB types](./tests/src/ckb_types.rs).

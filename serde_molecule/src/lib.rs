@@ -15,6 +15,7 @@ pub use crate::de::from_slice;
 pub use crate::error::{Error, Result};
 pub use crate::ser::to_vec;
 
+pub mod big_array_serde;
 pub mod de;
 pub mod dynvec_serde;
 pub mod error;
