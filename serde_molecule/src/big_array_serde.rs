@@ -1,41 +1,11 @@
 // from https://github.com/est31/serde-big-array/blob/master/src/const_generics.rs
 
+use alloc::vec::Vec;
 use core::fmt;
 use core::marker::PhantomData;
-use core::mem::MaybeUninit;
 use core::result;
 use serde::de::{Deserialize, Deserializer, Error, SeqAccess, Visitor};
 use serde::ser::{Serialize, SerializeTuple, Serializer};
-
-pub(crate) struct PartiallyInitialized<T, const N: usize>(
-    pub(crate) Option<MaybeUninit<[T; N]>>,
-    pub(crate) usize,
-);
-
-impl<T, const N: usize> PartiallyInitialized<T, N> {
-    #[inline]
-    pub(crate) fn new() -> Self {
-        PartiallyInitialized(Some(MaybeUninit::uninit()), 0)
-    }
-}
-
-impl<T, const N: usize> Drop for PartiallyInitialized<T, N> {
-    fn drop(&mut self) {
-        if !core::mem::needs_drop::<T>() {
-            return;
-        }
-        if let Some(arr) = &mut self.0 {
-            while self.1 > 0 {
-                self.1 -= 1;
-                let offs = self.1;
-                let p = (arr.as_mut_ptr() as *mut T).wrapping_add(offs);
-                unsafe {
-                    core::ptr::drop_in_place::<T>(p);
-                }
-            }
-        }
-    }
-}
 
 pub trait BigArray<'de, T>: Sized {
     fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>
@@ -84,22 +54,15 @@ impl<'de, T, const N: usize> BigArray<'de, T> for [T; N] {
             where
                 A: SeqAccess<'de>,
             {
-                unsafe {
-                    let mut arr = PartiallyInitialized::<T, N>::new();
-                    {
-                        let p = arr.0.as_mut().unwrap();
-                        for i in 0..N {
-                            let p = (p.as_mut_ptr() as *mut T).wrapping_add(i);
-                            let val = seq
-                                .next_element()?
-                                .ok_or_else(|| Error::invalid_length(i, &self))?;
-                            core::ptr::write(p, val);
-                            arr.1 += 1;
-                        }
-                    }
-                    let initialized = arr.0.take().unwrap().assume_init();
-                    Ok(initialized)
+                let mut vec = Vec::with_capacity(N);
+                for i in 0..N {
+                    let val = seq
+                        .next_element()?
+                        .ok_or_else(|| Error::invalid_length(i, &self))?;
+                    vec.push(val);
                 }
+                vec.try_into()
+                    .map_err(|_| Error::custom("Failed to convert Vec to array"))
             }
         }
 
