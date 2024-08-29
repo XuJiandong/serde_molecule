@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
-use serde_molecule::big_array_serde;
+use serde_molecule::{big_array_serde, from_slice, to_vec};
 
-use crate::test_once;
+use crate::test_eq_once;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 struct BigArray {
     f1: u8,
     #[serde(with = "big_array_serde")]
@@ -19,10 +19,10 @@ fn test_big_array() {
         f2: [1u8; 33],
         f3: [2u8; 64],
     };
-    test_once(&value);
+    test_eq_once(&value);
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 struct BigArray2 {
     f1: u8,
     #[serde(with = "big_array_serde")]
@@ -38,5 +38,5 @@ fn test_big_array_nested() {
         f2: [[1u8, 1u8]; 33],
         f3: [[2u8, 2u8, 2u8]; 64],
     };
-    test_once(&value);
+    test_eq_once(&value);
 }
