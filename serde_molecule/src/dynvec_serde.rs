@@ -16,14 +16,15 @@ where
     T: Serialize,
     V: IntoIterator<Item = T>,
 {
-    let mut parts = vec![];
-    for v in value.into_iter() {
-        // for dynvec, the element can't be molecule struct.
-        parts.push(
+    let parts: Result<Vec<_>, _> = value
+        .into_iter()
+        .map(|v| {
             to_vec(&v, false)
-                .map_err(|_| ser::Error::custom("failed to serialize element in vector"))?,
-        );
-    }
+                .map_err(|_| ser::Error::custom("failed to serialize element in vector"))
+        })
+        .collect();
+
+    let parts = parts?; // Propagate error if any element fails to serialize.
     let data = assemble_table(&parts);
     serializer.serialize_bytes(&data)
 }
