@@ -24,6 +24,7 @@ pub enum Error {
     InvalidTableLength,
     InvalidTableHeader,
     InvalidTableCount,
+    MixTableAndStruct,
 }
 
 pub type Result<T> = result::Result<T, Error>;

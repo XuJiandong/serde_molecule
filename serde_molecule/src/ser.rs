@@ -226,6 +226,9 @@ impl<'a> ser::Serializer for &'a mut MoleculeSerializer {
     }
 
     fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq> {
+        if self.is_struct {
+            return Err(Error::MixTableAndStruct);
+        }
         Ok(FixVec::new(self))
     }
 
@@ -252,6 +255,9 @@ impl<'a> ser::Serializer for &'a mut MoleculeSerializer {
     }
 
     fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap> {
+        if self.is_struct {
+            return Err(Error::MixTableAndStruct);
+        }
         Ok(Map::new(self))
     }
 
