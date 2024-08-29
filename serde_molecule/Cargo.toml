@@ -6,7 +6,7 @@ categories = ["encoding", "parser-implementations", "no-std"]
 description = "Implementation of Molecule using Serde."
 edition = "2021"
 keywords = ["molecule", "serde", "serialization", "deserialization", "rust", "CKB"]
-readme = "../README.md"
+readme = "README.md"
 license = "MIT"
 repository = "https://github.com/XuJiandong/serde_molecule"
 

@@ -17,3 +17,6 @@ example-tests:
 
 mol-gen:
 	moleculec --schema-file tests/schemas/test1.mol --language rust | rustfmt > tests/src/old/test1.rs
+
+dry-publish:
+	cargo publish -p serde_molecule --dry-run --allow-dirty
