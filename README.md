@@ -148,6 +148,13 @@ struct BigArray {
 }
 ```
 
+## Drawback of Deserialization
+
+Compared to the [Rust version of the Molecule
+implementation](https://github.com/nervosnetwork/molecule), deserialization with
+`serde_molecule` consumes at least double the memory. In memory-limited
+scenarios, such as on-chain scripts, it's not recommended to use.
+
 
 ## Example
 Here is an example definition of [CKB types](https://github.com/XuJiandong/serde_molecule/tree/main/tests/src/ckb_types.rs).
