@@ -109,7 +109,7 @@ It is not recommended to use HashMap because its key-value pairs are stored in
 arbitrary order.
 
 ## Union with customized id
-For molecule union with customized id, see [example](./examples/serde_molecule_customized_union_id).
+For molecule union with customized id, see [example](https://github.com/XuJiandong/serde_molecule/tree/main/examples/serde_molecule_customized_union_id).
 
 ## no_std support
 
@@ -126,7 +126,7 @@ serde_molecule = { version = "x.x.x", default-features = false, features = ["all
 serde = { version = "x.x.x", default-features = false, features = ["derive"] }
 ```
 
-See the [no_std example](./examples/serde_molecule_nostd) for more details.
+See the [no_std example](https://github.com/XuJiandong/serde_molecule/tree/main/examples/serde_molecule_nostd) for more details.
 
 ## Big Array Support
 
@@ -150,4 +150,4 @@ struct BigArray {
 
 
 ## Example
-Here is an example definition of [CKB types](./tests/src/ckb_types.rs).
+Here is an example definition of [CKB types](https://github.com/XuJiandong/serde_molecule/tree/main/tests/src/ckb_types.rs).

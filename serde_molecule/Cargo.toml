@@ -7,6 +7,8 @@ description = "A molecule serialization file format on CKB"
 edition = "2021"
 keywords = ["molecule", "serde", "serialization", "CKB"]
 readme = "../README.md"
+license = "MIT"
+repository = "https://github.com/XuJiandong/serde_molecule"
 
 [dependencies]
 serde = { version = "1.0.208", default-features = false }
