@@ -10,10 +10,6 @@ pub enum Error {
     /// Contains a general error message as a string.
     Message(String),
 
-    /// This error is not used by this crate. It can be utilized by external code to
-    /// indicate a general error.
-    Unknown,
-
     /// Occurs when the data length is incorrect while parsing a number or molecule header.
     MismatchedLength,
 
