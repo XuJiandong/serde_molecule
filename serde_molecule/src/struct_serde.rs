@@ -15,7 +15,7 @@ where
     S: Serializer,
     T: Serialize,
 {
-    let data = to_vec(value, true).map_err(|_| ser::Error::custom("failed to serialize struct"))?;
+    let data = to_vec(value, true).map_err(ser::Error::custom)?;
     serializer.serialize_bytes(&data)
 }
 

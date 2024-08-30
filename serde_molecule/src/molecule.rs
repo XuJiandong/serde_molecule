@@ -47,7 +47,7 @@ pub fn assemble_fixvec(parts: &Vec<Vec<u8>>) -> Result<Vec<u8>, Error> {
         let len = parts[0].len();
         for item in parts {
             if len != item.len() {
-                return Err(Error::InvalidFixvec);
+                return Err(Error::AssembleFixvec);
             }
         }
     }

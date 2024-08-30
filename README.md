@@ -77,8 +77,8 @@ struct RawTransaction {
 }
 ```
 
-By default, every field is considered as molecule table. If it is molecule
-struct, we should annotate it explicitly.
+By default, every field is considered as molecule `table`. If it is molecule
+`struct`, we should annotate it explicitly.
 ```rust,ignore
 use serde_molecule::struct_serde;
 
@@ -89,11 +89,12 @@ pub struct CellInput {
     pub previous_output: OutPoint,
 }
 ```
-
-If the top-level type is a molecule struct, the second argument to `to_vec` or
+If the top-level type is a molecule `struct`, the second argument to `to_vec` or
 `from_slice` should be `true`. If the value is `false`, the top-level type is
-considered a molecule table.
+considered a molecule `table`.
 
+For all Molecule `struct`s, their inner and descendant fields should be "fixed
+size" (see the table above).
 
 ## Map
 The Rust map types (like `BTreeMap` and `HashMap`) can be mapped to the following Molecule schemas:
@@ -147,6 +148,13 @@ struct BigArray {
     f3: [u8; 64],
 }
 ```
+
+## Drawback of Deserialization
+
+Compared to the [Rust version of the Molecule
+implementation](https://github.com/nervosnetwork/molecule), deserialization with
+`serde_molecule` consumes at least double the memory. In memory-limited
+scenarios, such as on-chain scripts, it's not recommended to use.
 
 
 ## Example
