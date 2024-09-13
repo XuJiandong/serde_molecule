@@ -200,3 +200,17 @@ fn test_nested_struct() {
     assert_eq!(value2.s0.f4, 0x1234);
     assert_eq!(value2.f1, 0x12345678);
 }
+
+#[derive(Serialize, Deserialize)]
+enum UnionWithDynvec {
+    #[serde(with = "dynvec_serde")]
+    DynvecVariant(Vec<String>),
+    VariantA(u8),
+}
+
+#[test]
+fn test_union_with_dynvec() {
+    let vs: Vec<String> = vec!["hello".into(), "world".into(), "".into()];
+    let variant = UnionWithDynvec::DynvecVariant(vs);
+    test_once(&variant);
+}

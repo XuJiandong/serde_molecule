@@ -88,6 +88,9 @@ pub fn disassemble_fixvec(data: &[u8]) -> Result<Vec<&[u8]>, Error> {
         return Ok(vec![]);
     }
     let remaining = data.len().checked_sub(4).ok_or(Error::Overflow)?;
+    if remaining == 0 {
+        return Err(Error::InvalidFixvec);
+    }
     if remaining % item_count != 0 {
         return Err(Error::InvalidFixvec);
     }

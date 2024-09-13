@@ -6,6 +6,8 @@ use crate::old::test1::Struct1Opt;
 use crate::old::test1::Table1 as OldTable1;
 use crate::old::test1_default as old_default;
 use molecule::prelude::*;
+use serde::{Deserialize, Serialize};
+use serde_molecule::{dynvec_serde, error::Result, struct_serde};
 use serde_molecule::{from_slice, to_vec};
 
 #[test]
@@ -282,4 +284,31 @@ fn test_block_v1() {
     let b2: crate::ckb_types::BlockV1 = serde_molecule::from_slice(&b1, false).unwrap();
     assert_eq!(b2, b0);
     compare_slice(bytes.as_slice(), b1.as_slice());
+}
+
+#[derive(Serialize, Deserialize)]
+struct Struct0 {
+    f0: u8,
+    f1: u64,
+}
+
+#[derive(Serialize, Deserialize)]
+struct StructOom {
+    pub f1: u8,
+    pub f2: u16,
+    pub f3: [u8; 3],
+    pub f4: [[u8; 5]; 2],
+    pub f5: Vec<u8>,
+    pub f6: String,
+    pub f7: Option<u32>,
+    #[serde(with = "dynvec_serde")]
+    pub f8: Vec<Vec<u8>>,
+    #[serde(with = "struct_serde")]
+    pub f10: Struct0,
+}
+
+#[test]
+fn test_oom() {
+    let bytes = include_bytes!("../test-data/oom-dump");
+    let _: Result<StructOom> = from_slice(bytes, false);
 }

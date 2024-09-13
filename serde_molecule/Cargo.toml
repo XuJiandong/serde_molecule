@@ -1,6 +1,6 @@
 [package]
 name = "serde_molecule"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["xjd <lynndon@gmail.com>"]
 categories = ["encoding", "parser-implementations", "no-std"]
 description = "Implementation of Molecule using Serde."
