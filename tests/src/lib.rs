@@ -12,6 +12,7 @@ pub mod old;
 pub mod simple;
 pub mod test_big_array;
 pub mod test_ckb_types;
+pub mod test_fuzzing;
 pub mod test_serde;
 
 pub fn test_once<V: Serialize + DeserializeOwned>(value: &V) {

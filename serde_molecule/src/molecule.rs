@@ -51,7 +51,9 @@ pub fn assemble_fixvec(parts: &Vec<Vec<u8>>) -> Result<Vec<u8>, Error> {
             }
         }
     }
-
+    if !parts.is_empty() && parts.iter().all(|e| e.is_empty()) {
+        return Err(Error::AssembleFixvec);
+    }
     let mut result = vec![];
     let len = parts.len() as u32;
     result.extend(len.to_le_bytes());
