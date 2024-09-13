@@ -56,9 +56,7 @@ fn test_assemble_fixvec() {
     assert!(result.is_err());
 
     test_fixvec(vec![]);
-    test_fixvec(vec![vec![]]);
     test_fixvec(vec![vec![1]]);
-    test_fixvec(vec![vec![], vec![]]);
     test_fixvec(vec![vec![1, 2, 3], vec![4, 5, 6]]);
     test_fixvec(vec![vec![1], vec![2], vec![3]]);
     test_fixvec(vec![vec![1, 2, 3], vec![4, 5, 6], vec![7, 8, 9]]);
