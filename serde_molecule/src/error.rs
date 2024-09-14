@@ -3,8 +3,6 @@ use alloc::string::ToString;
 use core::fmt::{self, Debug, Display};
 use core::result;
 use serde::{de, ser};
-#[cfg(feature = "std")]
-use std::error;
 #[derive(Debug)]
 pub enum Error {
     /// Contains a general error message as a string.
@@ -71,8 +69,7 @@ impl de::Error for Error {
 }
 
 impl de::StdError for Error {
-    #[cfg(feature = "std")]
-    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+    fn source(&self) -> Option<&(dyn de::StdError + 'static)> {
         None
     }
 }

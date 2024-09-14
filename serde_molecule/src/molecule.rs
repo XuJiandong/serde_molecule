@@ -51,7 +51,9 @@ pub fn assemble_fixvec(parts: &Vec<Vec<u8>>) -> Result<Vec<u8>, Error> {
             }
         }
     }
-
+    if !parts.is_empty() && parts.iter().all(|e| e.is_empty()) {
+        return Err(Error::AssembleFixvec);
+    }
     let mut result = vec![];
     let len = parts.len() as u32;
     result.extend(len.to_le_bytes());
@@ -88,6 +90,9 @@ pub fn disassemble_fixvec(data: &[u8]) -> Result<Vec<&[u8]>, Error> {
         return Ok(vec![]);
     }
     let remaining = data.len().checked_sub(4).ok_or(Error::Overflow)?;
+    if remaining == 0 {
+        return Err(Error::InvalidFixvec);
+    }
     if remaining % item_count != 0 {
         return Err(Error::InvalidFixvec);
     }
