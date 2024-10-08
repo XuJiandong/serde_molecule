@@ -214,3 +214,21 @@ fn test_union_with_dynvec() {
     let variant = UnionWithDynvec::DynvecVariant(vs);
     test_once(&variant);
 }
+
+#[derive(Serialize)]
+struct StructWithDynVec {
+    #[serde(serialize_with = "dynvec_serde::serialize")]
+    pub v: Vec<Vec<u8>>,
+}
+
+#[test]
+fn test_result() {
+    let mut value = Struct1::default();
+    value.f1 = 100;
+    value.f2 = 200;
+    value.f3 = [1, 2, 3];
+    value.f4 = [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5]];
+
+    let result: Result<Struct1, ()> = Ok(value);
+    test_once(&result);
+}
