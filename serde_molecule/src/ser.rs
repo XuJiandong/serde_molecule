@@ -35,7 +35,7 @@ pub(crate) struct MoleculeSerializer {
 }
 
 impl MoleculeSerializer {
-    /// Creates a new molecule serializer.    
+    /// Creates a new molecule serializer.
     pub fn new(is_struct: bool) -> Self {
         MoleculeSerializer {
             data: vec![],
@@ -72,10 +72,9 @@ impl<'a> ser::Serializer for &'a mut MoleculeSerializer {
     type SerializeTuple = Tuple<'a>;
     type SerializeStruct = Table<'a>;
     type SerializeMap = Map<'a>;
-    // not implemented
-    type SerializeTupleStruct = Compound<'a>;
-    type SerializeTupleVariant = Compound<'a>;
-    type SerializeStructVariant = Compound<'a>;
+    type SerializeStructVariant = Variant<'a>;
+    type SerializeTupleVariant = Variant<'a>;
+    type SerializeTupleStruct = Table<'a>;
 
     fn serialize_bool(self, value: bool) -> Result<()> {
         let value = match value {
@@ -239,19 +238,19 @@ impl<'a> ser::Serializer for &'a mut MoleculeSerializer {
     fn serialize_tuple_struct(
         self,
         _name: &'static str,
-        _len: usize,
+        len: usize,
     ) -> Result<Self::SerializeTupleStruct> {
-        Err(Error::Unimplemented)
+        Ok(Table::new(self, len, false))
     }
 
     fn serialize_tuple_variant(
         self,
         _name: &'static str,
-        _variant_index: u32,
+        variant_index: u32,
         _variant: &'static str,
-        _len: usize,
+        len: usize,
     ) -> Result<Self::SerializeTupleVariant> {
-        Err(Error::Unimplemented)
+        Ok(Variant::new(self, len, false, variant_index))
     }
 
     fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap> {
@@ -269,11 +268,11 @@ impl<'a> ser::Serializer for &'a mut MoleculeSerializer {
     fn serialize_struct_variant(
         self,
         _name: &'static str,
-        _variant_index: u32,
+        variant_index: u32,
         _variant: &'static str,
-        _len: usize,
+        len: usize,
     ) -> Result<Self::SerializeStructVariant> {
-        Err(Error::Unimplemented)
+        Ok(Variant::new(self, len, false, variant_index))
     }
 }
 
@@ -381,6 +380,21 @@ impl<'a> ser::SerializeStruct for Table<'a> {
     }
 }
 
+impl<'a> ser::SerializeTupleStruct for Table<'a> {
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_field<T>(&mut self, value: &T) -> Result<()>
+    where
+        T: ?Sized + Serialize,
+    {
+        ser::SerializeStruct::serialize_field(self, "", value)
+    }
+    fn end(self) -> Result<()> {
+        ser::SerializeStruct::end(self)
+    }
+}
+
 pub(crate) struct Map<'a> {
     ser: &'a mut MoleculeSerializer,
     parts: Vec<Vec<u8>>,
@@ -460,18 +474,68 @@ impl<'a> ser::SerializeTupleVariant for Compound<'a> {
     }
 }
 
-impl<'a> ser::SerializeStructVariant for Compound<'a> {
+pub(crate) struct Variant<'a> {
+    ser: &'a mut MoleculeSerializer,
+    parts: Vec<Vec<u8>>,
+    count: usize,
+    is_struct: bool,
+    variant_index: u32,
+}
+
+impl<'a> Variant<'a> {
+    pub fn new(
+        ser: &'a mut MoleculeSerializer,
+        count: usize,
+        is_struct: bool,
+        variant_index: u32,
+    ) -> Self {
+        Variant {
+            ser,
+            parts: vec![],
+            count,
+            is_struct,
+            variant_index,
+        }
+    }
+}
+
+impl<'a> ser::SerializeStructVariant for Variant<'a> {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_field<T>(&mut self, _key: &'static str, _value: &T) -> Result<()>
+    fn serialize_field<T>(&mut self, _key: &'static str, value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        Err(Error::Unimplemented)
+        self.parts.push(to_vec(value, self.is_struct)?);
+        Ok(())
     }
 
     fn end(self) -> Result<()> {
-        Err(Error::Unimplemented)
+        if self.parts.len() != self.count {
+            return Err(Error::InvalidTableCount);
+        }
+        if self.is_struct {
+            return Err(Error::Unimplemented);
+        }
+        let data = assemble_table(&self.parts);
+        self.ser.extend(self.variant_index.to_le_bytes());
+        self.ser.extend(data);
+        Ok(())
+    }
+}
+
+impl<'a> ser::SerializeTupleVariant for Variant<'a> {
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_field<T>(&mut self, value: &T) -> Result<()>
+    where
+        T: ?Sized + Serialize,
+    {
+        ser::SerializeStructVariant::serialize_field(self, "", value)
+    }
+    fn end(self) -> Result<()> {
+        ser::SerializeStructVariant::end(self)
     }
 }
