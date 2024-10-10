@@ -34,7 +34,7 @@ serde = { version = "???", features = ["derive"] }
 serde_molecule = { version = "???" }
 ```
 Then to annotate the types with `#[derive(Serialize, Deserialize)]`. After that,
-use `to_vec` or `from_slice` to serialize/deserialize. 
+use `to_vec` or `from_slice` to serialize/deserialize.
 
 ## Types mapping
 
@@ -61,6 +61,11 @@ Rust types are mapping to molecule types, according to the [RFC](https://github.
 | LinkedList | fixvec | no |
 | VecDeque   | fixvec | no |
 | HashSet    | fixvec | no |
+| Tuple Struct|table  | no |
+| Tuple Variant|table | no |
+| Struct Variant|table| no |
+| Tuple     | not supported | N/A|
+
 
 By default, `Vec`-like containers (such as `Vec`, `BinaryHeap`, etc.) are
 serialized into `fixvec`. Every element in the `Vec` must have a fixed size

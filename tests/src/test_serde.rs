@@ -214,3 +214,62 @@ fn test_union_with_dynvec() {
     let variant = UnionWithDynvec::DynvecVariant(vs);
     test_once(&variant);
 }
+
+#[derive(Serialize)]
+struct StructWithDynVec {
+    #[serde(serialize_with = "dynvec_serde::serialize")]
+    pub v: Vec<Vec<u8>>,
+}
+
+#[test]
+fn test_result() {
+    let mut value = Struct1::default();
+    value.f1 = 100;
+    value.f2 = 200;
+    value.f3 = [1, 2, 3];
+    value.f4 = [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5]];
+
+    let result: Result<Struct1, ()> = Ok(value);
+    test_once(&result);
+}
+
+#[derive(Serialize, Deserialize)]
+enum StructVariant {
+    Method1 { arg1: u64, arg2: String },
+    Method2 { arg1: u8, arg2: u16 },
+}
+
+#[test]
+fn test_struct_variant() {
+    let var = StructVariant::Method1 {
+        arg1: 123,
+        arg2: "hello".into(),
+    };
+    test_once(&var);
+}
+
+#[derive(Serialize, Deserialize)]
+struct TupleStruct(u8, u16, String);
+
+#[derive(Serialize, Deserialize)]
+struct NewType(String);
+
+#[test]
+fn test_tuple_struct() {
+    let ts = TupleStruct(1, 2, "hello".into());
+    test_once(&ts);
+    let nt = NewType("hello".into());
+    test_once(&nt);
+}
+
+#[derive(Serialize, Deserialize)]
+enum TupleVariant {
+    TupleVariant1(u8, u16, String),
+    TupleVariant2(u32, u64),
+}
+
+#[test]
+fn test_tuple_variant() {
+    let tv = TupleVariant::TupleVariant1(1, 2, "hello".into());
+    test_once(&tv);
+}

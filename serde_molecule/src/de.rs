@@ -262,7 +262,6 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut MoleculeDeserializer<'de> {
         access.parse()?;
         visitor.visit_seq(access)
     }
-
     fn deserialize_tuple_struct<V>(
         self,
         _name: &'static str,
@@ -272,7 +271,9 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut MoleculeDeserializer<'de> {
     where
         V: de::Visitor<'de>,
     {
-        self.deserialize_tuple(len, visitor)
+        let mut access = TableAccess::new(self, len);
+        access.parse()?;
+        visitor.visit_seq(access)
     }
 
     fn deserialize_map<V>(self, visitor: V) -> Result<V::Value>
@@ -472,6 +473,18 @@ impl<'de, 'a> de::MapAccess<'de> for TableAccess<'de, 'a> {
     }
 }
 
+// used for tuple struct
+impl<'de, 'a> de::SeqAccess<'de> for TableAccess<'de, 'a> {
+    type Error = Error;
+
+    fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>>
+    where
+        T: de::DeserializeSeed<'de>,
+    {
+        Ok(Some(de::MapAccess::next_value_seed(self, seed)?))
+    }
+}
+
 struct MappingAccess<'de, 'a> {
     de: &'a mut MoleculeDeserializer<'de>,
     current_index: usize,
@@ -617,7 +630,7 @@ impl<'de, 'a> de::VariantAccess<'de> for UnionAccess<'de, 'a> {
     where
         V: de::Visitor<'de>,
     {
-        de::Deserializer::deserialize_tuple(self.de, len, visitor)
+        de::Deserializer::deserialize_tuple_struct(self.de, "", len, visitor)
     }
 
     fn struct_variant<V>(self, fields: &'static [&'static str], visitor: V) -> Result<V::Value>
