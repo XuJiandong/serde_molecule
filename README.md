@@ -170,9 +170,11 @@ However, there are some exceptions:
 1. The unit tuple `()` is supported and maps to an empty array.
 2. Tuple structs and tuple variants are supported and map to Molecule tables.
 
-For general tuples, it's recommended to use a struct instead. For example:
+For general tuples, it's recommended to use a rust struct instead. For example:
 
 ```rust
+use serde::{Deserialize, Serialize};
+
 // Instead of this:
 // type MyTuple = (u8, String);
 
