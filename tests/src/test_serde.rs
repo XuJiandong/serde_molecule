@@ -273,3 +273,13 @@ fn test_tuple_variant() {
     let tv = TupleVariant::TupleVariant1(1, 2, "hello".into());
     test_once(&tv);
 }
+
+#[test]
+fn test_unit() {
+    let u = ();
+    test_once(&u);
+    let res: Result<(), String> = Ok(());
+    test_once(&res);
+    let res2: Result<(), String> = Err("error".into());
+    test_once(&res2);
+}
