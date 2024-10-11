@@ -161,6 +161,28 @@ implementation](https://github.com/nervosnetwork/molecule), deserialization with
 `serde_molecule` consumes at least double the memory. In memory-limited
 scenarios, such as on-chain scripts, it's not recommended to use.
 
+## Tuple Support
+
+Serde treats tuples (e.g., `(u8, String)`) similarly to arrays (e.g., `[u8; 2]`), which leads to limited support in the context of Molecule serialization. This is due to Serde's [implementation](https://github.com/serde-rs/serde/blob/4b3178b053683b8e13f9f551e2a40fbe4a927e43/serde/src/ser/impls.rs#L155-L159).
+
+However, there are some exceptions:
+
+1. The unit tuple `()` is supported and maps to an empty array.
+2. Tuple structs and tuple variants are supported and map to Molecule tables.
+
+For general tuples, it's recommended to use a struct instead. For example:
+
+```rust
+// Instead of this:
+// type MyTuple = (u8, String);
+
+// Use this:
+#[derive(Serialize, Deserialize)]
+struct MyStruct {
+    field1: u8,
+    field2: String,
+}
+```
 
 ## Example
 Here is an example definition of [CKB types](https://github.com/XuJiandong/serde_molecule/tree/main/tests/src/ckb_types.rs).
