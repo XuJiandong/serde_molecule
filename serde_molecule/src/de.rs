@@ -179,7 +179,11 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut MoleculeDeserializer<'de> {
     where
         V: de::Visitor<'de>,
     {
-        visitor.visit_u32(self.as_u32()?)
+        let value = self.as_u32()?;
+        match char::from_u32(value) {
+            Some(ch) => visitor.visit_char(ch),
+            None => Err(Error::InvalidChar),
+        }
     }
 
     fn deserialize_str<V>(self, visitor: V) -> Result<V::Value>
