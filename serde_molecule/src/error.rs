@@ -52,6 +52,9 @@ pub enum Error {
 
     /// Indicates that non-fixed size fields are not allowed in a molecule struct, e.g., `Option`, `Vec`, `DynVec`, `enum`.
     MixTableAndStruct,
+
+    /// Invalid char
+    InvalidChar,
 }
 
 pub type Result<T> = result::Result<T, Error>;

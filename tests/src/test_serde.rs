@@ -283,3 +283,9 @@ fn test_unit() {
     let res2: Result<(), String> = Err("error".into());
     test_once(&res2);
 }
+
+#[test]
+fn test_char() {
+    let c = 'a';
+    test_once(&c);
+}
