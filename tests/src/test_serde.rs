@@ -237,6 +237,11 @@ fn test_result() {
 enum StructVariant {
     Method1 { arg1: u64, arg2: String },
     Method2 { arg1: u8, arg2: u16 },
+    Method3 {
+        #[serde(with = "dynvec_serde")]
+        arg1: Vec<Vec<u8>>,
+        arg2: Vec<u8>
+    }
 }
 
 #[test]

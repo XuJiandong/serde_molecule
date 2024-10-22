@@ -1,11 +1,11 @@
 [package]
 name = "serde_molecule"
-version = "1.1.0"
+version = "1.1.1"
 authors = ["xjd <lynndon@gmail.com>"]
 categories = ["encoding", "parser-implementations", "no-std"]
 description = "Implementation of Molecule using Serde."
 edition = "2021"
-keywords = ["molecule", "serde", "rust", "CKB"]
+keywords = ["macro", "serde", "blockchain", "CKB"]
 readme = "README.md"
 license = "MIT"
 repository = "https://github.com/XuJiandong/serde_molecule"
