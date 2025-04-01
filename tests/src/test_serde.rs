@@ -215,10 +215,44 @@ fn test_union_with_dynvec() {
     test_once(&variant);
 }
 
-#[derive(Serialize)]
-struct StructWithDynVec {
-    #[serde(serialize_with = "dynvec_serde::serialize")]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+struct TableWithDynVec {
+    #[serde(with = "dynvec_serde")]
     pub v: Vec<Vec<u8>>,
+}
+
+#[test]
+fn test_work_with_serde_json() {
+    let s = TableWithDynVec {
+        v: vec![vec![1, 2, 3], vec![4, 5, 6]],
+    };
+    let json = serde_json::to_string(&s).unwrap();
+    let s2: TableWithDynVec = serde_json::from_str(&json).unwrap();
+    assert_eq!(s, s2);
+
+    let molecule = serde_molecule::to_vec(&s, false).unwrap();
+    let s3: TableWithDynVec = serde_molecule::from_slice(&molecule, false).unwrap();
+    assert_eq!(s, s3);
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+struct TableWithStruct {
+    #[serde(with = "struct_serde")]
+    pub v: StructInner,
+}
+
+#[test]
+fn test_work_with_serde_json_struct() {
+    let s = TableWithStruct {
+        v: StructInner { f0: 123 },
+    };
+    let json = serde_json::to_string(&s).unwrap();
+    let s2: TableWithStruct = serde_json::from_str(&json).unwrap();
+    assert_eq!(s, s2);
+
+    let molecule = serde_molecule::to_vec(&s, false).unwrap();
+    let s3: TableWithStruct = serde_molecule::from_slice(&molecule, false).unwrap();
+    assert_eq!(s, s3);
 }
 
 #[test]

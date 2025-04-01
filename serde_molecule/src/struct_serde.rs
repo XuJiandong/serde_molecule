@@ -15,8 +15,12 @@ where
     S: Serializer,
     T: Serialize,
 {
-    let data = to_vec(value, true).map_err(ser::Error::custom)?;
-    serializer.serialize_bytes(&data)
+    if std::any::type_name::<S>().contains("serde_molecule") {
+        let data = to_vec(value, true).map_err(ser::Error::custom)?;
+        serializer.serialize_bytes(&data)
+    } else {
+        value.serialize(serializer) // Use default serialization for others, e.g. serde_json
+    }
 }
 
 pub fn deserialize<'de, D, T>(deserializer: D) -> Result<T, D::Error>
@@ -24,15 +28,19 @@ where
     D: Deserializer<'de>,
     T: DeserializeOwned,
 {
-    // This is a tricky approach: use this method to indicate that it is the top
-    // level of the Molecule struct. When the inner `deserialize` is invoked, it
-    // does not create a new instance. This ensures that the `index` status
-    // propagates across the calling functions. When it is MoleculeDeserializer,
-    // it defaults to true, which is exactly what we want.
-    if deserializer.is_human_readable() {
-        let data = CollectData::deserialize(deserializer)?.data;
-        let mut de = MoleculeStructDeserializer::new(data);
-        T::deserialize(&mut de).map_err(de::Error::custom)
+    if std::any::type_name::<D>().contains("serde_molecule") {
+        // This is a tricky approach: use this method to indicate that it is the top
+        // level of the Molecule struct. When the inner `deserialize` is invoked, it
+        // does not create a new instance. This ensures that the `index` status
+        // propagates across the calling functions. When it is MoleculeDeserializer,
+        // it defaults to true, which is exactly what we want.
+        if deserializer.is_human_readable() {
+            let data = CollectData::deserialize(deserializer)?.data;
+            let mut de = MoleculeStructDeserializer::new(data);
+            T::deserialize(&mut de).map_err(de::Error::custom)
+        } else {
+            T::deserialize(deserializer)
+        }
     } else {
         T::deserialize(deserializer)
     }
