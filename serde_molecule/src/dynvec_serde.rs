@@ -16,7 +16,7 @@ where
     T: Serialize,
     V: IntoIterator<Item = T> + Serialize,
 {
-    if std::any::type_name::<S>().contains("serde_molecule") {
+    if core::any::type_name::<S>().contains("serde_molecule") {
         let parts: Result<Vec<_>, _> = value
             .into_iter()
             .map(|v| {
@@ -39,7 +39,7 @@ where
     V: FromIterator<T> + Deserialize<'de>,
     T: Deserialize<'de>,
 {
-    if std::any::type_name::<D>().contains("serde_molecule") {
+    if core::any::type_name::<D>().contains("serde_molecule") {
         deserializer.deserialize_struct(
             DYNVEC_STR,
             &[],
