@@ -16,8 +16,7 @@ pub(crate) const DYNVEC_STR: &str = "$serde_molecule::DynVec";
 /// Deserialize an instance of type `T` from bytes of molecule.
 ///
 /// Arguments
-/// * is_struct - mapping to molecule struct. Set to false to map to molecule
-/// table.
+/// * is_struct - mapping to molecule struct. Set to false to map to molecule table.
 pub fn from_slice<'a, T>(v: &'a [u8], is_struct: bool) -> Result<T>
 where
     T: de::Deserialize<'a>,
@@ -81,7 +80,7 @@ impl<'de> MoleculeDeserializer<'de> {
     }
 }
 
-impl<'de, 'a> de::Deserializer<'de> for &'a mut MoleculeDeserializer<'de> {
+impl<'de> de::Deserializer<'de> for &mut MoleculeDeserializer<'de> {
     type Error = Error;
 
     fn deserialize_any<V>(self, _visitor: V) -> Result<V::Value>
@@ -364,7 +363,7 @@ impl<'de, 'a> ArrayAccess<'de, 'a> {
     }
 }
 
-impl<'de, 'a> de::SeqAccess<'de> for ArrayAccess<'de, 'a> {
+impl<'de> de::SeqAccess<'de> for ArrayAccess<'de, '_> {
     type Error = Error;
 
     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>>
@@ -404,7 +403,7 @@ impl<'de, 'a> FixvecAccess<'de, 'a> {
     }
 }
 
-impl<'de, 'a> de::SeqAccess<'de> for FixvecAccess<'de, 'a> {
+impl<'de> de::SeqAccess<'de> for FixvecAccess<'de, '_> {
     type Error = Error;
 
     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>>
@@ -450,7 +449,7 @@ impl<'de, 'a> TableAccess<'de, 'a> {
     }
 }
 
-impl<'de, 'a> de::MapAccess<'de> for TableAccess<'de, 'a> {
+impl<'de> de::MapAccess<'de> for TableAccess<'de, '_> {
     type Error = Error;
 
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>>
@@ -478,7 +477,7 @@ impl<'de, 'a> de::MapAccess<'de> for TableAccess<'de, 'a> {
 }
 
 // used for tuple struct
-impl<'de, 'a> de::SeqAccess<'de> for TableAccess<'de, 'a> {
+impl<'de> de::SeqAccess<'de> for TableAccess<'de, '_> {
     type Error = Error;
 
     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>>
@@ -516,7 +515,7 @@ impl<'de, 'a> MappingAccess<'de, 'a> {
     }
 }
 
-impl<'de, 'a> de::MapAccess<'de> for MappingAccess<'de, 'a> {
+impl<'de> de::MapAccess<'de> for MappingAccess<'de, '_> {
     type Error = Error;
 
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>>
@@ -564,7 +563,7 @@ impl<'de, 'a> DynvecAccess<'de, 'a> {
     }
 }
 
-impl<'de, 'a> de::MapAccess<'de> for DynvecAccess<'de, 'a> {
+impl<'de> de::MapAccess<'de> for DynvecAccess<'de, '_> {
     type Error = Error;
 
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>>
@@ -601,7 +600,7 @@ impl<'de, 'a> UnionAccess<'de, 'a> {
     }
 }
 
-impl<'de, 'a> de::EnumAccess<'de> for UnionAccess<'de, 'a> {
+impl<'de> de::EnumAccess<'de> for UnionAccess<'de, '_> {
     type Error = Error;
     type Variant = Self;
 
@@ -616,7 +615,7 @@ impl<'de, 'a> de::EnumAccess<'de> for UnionAccess<'de, 'a> {
     }
 }
 
-impl<'de, 'a> de::VariantAccess<'de> for UnionAccess<'de, 'a> {
+impl<'de> de::VariantAccess<'de> for UnionAccess<'de, '_> {
     type Error = Error;
 
     fn unit_variant(self) -> Result<()> {

@@ -115,7 +115,7 @@ fn test_disassemble_table() {
     assert_eq!(result[4].len(), 7);
 }
 
-fn test_table(data: &Vec<Vec<u8>>) {
+fn test_table(data: &[Vec<u8>]) {
     let result1 = assemble_table(data);
     let result2 = disassemble_table(&result1);
     let result2 = result2.unwrap();
@@ -128,16 +128,16 @@ fn test_table(data: &Vec<Vec<u8>>) {
 
 #[test]
 fn test_assemble_table() {
-    test_table(&vec![]);
-    test_table(&vec![vec![]]);
-    test_table(&vec![vec![1]]);
-    test_table(&vec![vec![1, 2, 3]]);
-    test_table(&vec![vec![], vec![]]);
-    test_table(&vec![vec![], vec![1]]);
-    test_table(&vec![vec![1], vec![]]);
-    test_table(&vec![vec![], vec![1], vec![2]]);
-    test_table(&vec![vec![1], vec![], vec![2]]);
-    test_table(&vec![vec![1], vec![2], vec![]]);
-    test_table(&vec![vec![1], vec![2], vec![3]]);
-    test_table(&vec![vec![1, 2, 3], vec![4, 5, 6], vec![7, 8, 9]]);
+    test_table(&[]);
+    test_table(&[vec![]]);
+    test_table(&[vec![1]]);
+    test_table(&[vec![1, 2, 3]]);
+    test_table(&[vec![], vec![]]);
+    test_table(&[vec![], vec![1]]);
+    test_table(&[vec![1], vec![]]);
+    test_table(&[vec![], vec![1], vec![2]]);
+    test_table(&[vec![1], vec![], vec![2]]);
+    test_table(&[vec![1], vec![2], vec![]]);
+    test_table(&[vec![1], vec![2], vec![3]]);
+    test_table(&[vec![1, 2, 3], vec![4, 5, 6], vec![7, 8, 9]]);
 }

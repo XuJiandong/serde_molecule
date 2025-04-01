@@ -48,7 +48,7 @@ impl<'de> Deserialize<'de> for CollectData {
         D: Deserializer<'de>,
     {
         struct _Visitor;
-        impl<'de> Visitor<'de> for _Visitor {
+        impl Visitor<'_> for _Visitor {
             type Value = CollectData;
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("a CollectData")
@@ -110,7 +110,7 @@ impl MoleculeStructDeserializer {
     read_primitive!(read_f64, f64, 8);
 }
 
-impl<'de, 'a> Deserializer<'de> for &'a mut MoleculeStructDeserializer {
+impl<'de> Deserializer<'de> for &mut MoleculeStructDeserializer {
     type Error = Error;
 
     fn is_human_readable(&self) -> bool {
@@ -362,7 +362,7 @@ impl<'a> StructAccess<'a> {
     }
 }
 
-impl<'de, 'a> MapAccess<'de> for StructAccess<'a> {
+impl<'de> MapAccess<'de> for StructAccess<'_> {
     type Error = Error;
 
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
@@ -403,7 +403,7 @@ impl<'a> ArrayAccess<'a> {
     }
 }
 
-impl<'de, 'a> SeqAccess<'de> for ArrayAccess<'a> {
+impl<'de> SeqAccess<'de> for ArrayAccess<'_> {
     type Error = Error;
 
     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
