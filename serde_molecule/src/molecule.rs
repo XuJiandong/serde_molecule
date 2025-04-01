@@ -13,7 +13,7 @@ const NUMBER_SIZE: usize = 4;
 /// * Serialize all offset of fields as 32 bit unsigned integer in little-endian.
 /// * Serialize all fields in it in the order they are declared.
 ///
-pub fn assemble_table(parts: &Vec<Vec<u8>>) -> Vec<u8> {
+pub fn assemble_table(parts: &[Vec<u8>]) -> Vec<u8> {
     let header_len = parts.len() + 1;
     let mut header = vec![0u32; header_len];
     let mut offset = (header_len * 4) as u32;

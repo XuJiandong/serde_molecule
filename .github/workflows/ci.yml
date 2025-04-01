@@ -20,7 +20,7 @@ jobs:
       - name: Setup
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: 1.75.0
+          toolchain: 1.85.0
           components: rustfmt
       - name: Run
         run: make fmt
@@ -32,7 +32,7 @@ jobs:
       - name: Setup
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: 1.75.0
+          toolchain: 1.85.0
           components: clippy
       - name: Run
         run: make clippy
@@ -44,7 +44,7 @@ jobs:
       - name: Setup
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: 1.75.0
+          toolchain: 1.85.0
       - name: Run
         run: |
           cd examples/serde_molecule_nostd; make prepare; cd ../..

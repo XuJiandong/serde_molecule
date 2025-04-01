@@ -8,8 +8,7 @@ use serde::ser::{self, Serialize};
 /// Serialize the given data structure to byte vector.
 ///
 /// Arguments
-/// * is_struct - mapping to molecule struct. Set to false to map to molecule
-/// table.
+/// * is_struct - mapping to molecule struct. Set to false to map to molecule table.
 pub fn to_vec<T>(value: &T, is_struct: bool) -> Result<Vec<u8>>
 where
     T: ?Sized + Serialize,
@@ -51,16 +50,11 @@ impl From<MoleculeSerializer> for Vec<u8> {
 
 impl MoleculeSerializer {
     pub fn extend<I: IntoIterator<Item = u8>>(&mut self, iter: I) {
-        self.data.extend(iter.into_iter());
+        self.data.extend(iter);
     }
     pub fn is_struct(&self) -> bool {
         self.is_struct
     }
-}
-
-// dummy
-pub(crate) struct Compound<'a> {
-    _ser: &'a mut MoleculeSerializer,
 }
 
 impl<'a> ser::Serializer for &'a mut MoleculeSerializer {
@@ -191,7 +185,6 @@ impl<'a> ser::Serializer for &'a mut MoleculeSerializer {
     }
 
     /// Serialize newtypes without an object wrapper.
-
     fn serialize_newtype_struct<T>(self, _name: &'static str, value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
@@ -287,7 +280,7 @@ impl<'a> FixVec<'a> {
     }
 }
 
-impl<'a> ser::SerializeSeq for FixVec<'a> {
+impl ser::SerializeSeq for FixVec<'_> {
     type Ok = ();
     type Error = Error;
 
@@ -317,7 +310,7 @@ impl<'a> Tuple<'a> {
     }
 }
 
-impl<'a> ser::SerializeTuple for Tuple<'a> {
+impl ser::SerializeTuple for Tuple<'_> {
     type Ok = ();
     type Error = Error;
 
@@ -353,7 +346,7 @@ impl<'a> Table<'a> {
     }
 }
 
-impl<'a> ser::SerializeStruct for Table<'a> {
+impl ser::SerializeStruct for Table<'_> {
     type Ok = ();
     type Error = Error;
 
@@ -380,7 +373,7 @@ impl<'a> ser::SerializeStruct for Table<'a> {
     }
 }
 
-impl<'a> ser::SerializeTupleStruct for Table<'a> {
+impl ser::SerializeTupleStruct for Table<'_> {
     type Ok = ();
     type Error = Error;
 
@@ -411,7 +404,7 @@ impl<'a> Map<'a> {
     }
 }
 
-impl<'a> ser::SerializeMap for Map<'a> {
+impl ser::SerializeMap for Map<'_> {
     type Ok = ();
     type Error = Error;
 
@@ -442,38 +435,6 @@ impl<'a> ser::SerializeMap for Map<'a> {
     }
 }
 
-impl<'a> ser::SerializeTupleStruct for Compound<'a> {
-    type Ok = ();
-    type Error = Error;
-
-    fn serialize_field<T>(&mut self, _value: &T) -> Result<()>
-    where
-        T: ?Sized + Serialize,
-    {
-        Err(Error::Unimplemented)
-    }
-
-    fn end(self) -> Result<()> {
-        Err(Error::Unimplemented)
-    }
-}
-
-impl<'a> ser::SerializeTupleVariant for Compound<'a> {
-    type Ok = ();
-    type Error = Error;
-
-    fn serialize_field<T>(&mut self, _value: &T) -> Result<()>
-    where
-        T: ?Sized + Serialize,
-    {
-        Err(Error::Unimplemented)
-    }
-
-    fn end(self) -> Result<()> {
-        Err(Error::Unimplemented)
-    }
-}
-
 pub(crate) struct Variant<'a> {
     ser: &'a mut MoleculeSerializer,
     parts: Vec<Vec<u8>>,
@@ -499,7 +460,7 @@ impl<'a> Variant<'a> {
     }
 }
 
-impl<'a> ser::SerializeStructVariant for Variant<'a> {
+impl ser::SerializeStructVariant for Variant<'_> {
     type Ok = ();
     type Error = Error;
 
@@ -525,7 +486,7 @@ impl<'a> ser::SerializeStructVariant for Variant<'a> {
     }
 }
 
-impl<'a> ser::SerializeTupleVariant for Variant<'a> {
+impl ser::SerializeTupleVariant for Variant<'_> {
     type Ok = ();
     type Error = Error;
 
