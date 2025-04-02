@@ -13,7 +13,7 @@ unit-tests:
 
 example-tests:
 	cargo run --bin serde_molecule_customized_union_id
-	cd examples/serde_molecule_nostd; make build; cd ../..
+	cd examples/serde_molecule_nostd && make build && cd ../..
 
 mol-gen:
 	moleculec --schema-file tests/schemas/test1.mol --language rust | rustfmt > tests/src/old/test1.rs
