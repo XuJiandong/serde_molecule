@@ -6,7 +6,7 @@ use core::marker::PhantomData;
 use crate::to_vec;
 use crate::{
     de::DYNVEC_STR,
-    molecule::{assemble_table, SERDE_MOLECULE_TYPE},
+    molecule::{assemble_table, MOLECULE_DE, MOLECULE_SER},
 };
 use serde::{
     de::{MapAccess, Visitor},
@@ -19,7 +19,7 @@ where
     T: Serialize,
     V: IntoIterator<Item = T> + Serialize,
 {
-    if core::any::type_name::<S>().contains(SERDE_MOLECULE_TYPE) {
+    if core::any::type_name::<S>().contains(MOLECULE_SER) {
         let parts: Result<Vec<_>, _> = value
             .into_iter()
             .map(|v| {
@@ -42,7 +42,7 @@ where
     V: FromIterator<T> + Deserialize<'de>,
     T: Deserialize<'de>,
 {
-    if core::any::type_name::<D>().contains(SERDE_MOLECULE_TYPE) {
+    if core::any::type_name::<D>().contains(MOLECULE_DE) {
         deserializer.deserialize_struct(
             DYNVEC_STR,
             &[],

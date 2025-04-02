@@ -4,7 +4,8 @@ use alloc::vec::Vec;
 
 const NUMBER_SIZE: usize = 4;
 
-pub(crate) const SERDE_MOLECULE_TYPE: &str = "serde_molecule";
+pub(crate) const MOLECULE_SER: &str = "MoleculeSerializer";
+pub(crate) const MOLECULE_DE: &str = "MoleculeDeserializer";
 
 ///
 /// Assemble molecule table or dynvec. See

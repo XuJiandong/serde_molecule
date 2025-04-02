@@ -1,7 +1,7 @@
 use core::fmt;
 
 use crate::error::Error;
-use crate::molecule::SERDE_MOLECULE_TYPE;
+use crate::molecule::{MOLECULE_DE, MOLECULE_SER};
 use crate::ser::to_vec;
 use alloc::vec::Vec;
 use serde::de::DeserializeOwned;
@@ -16,7 +16,7 @@ where
     S: Serializer,
     T: Serialize,
 {
-    if core::any::type_name::<S>().contains(SERDE_MOLECULE_TYPE) {
+    if core::any::type_name::<S>().contains(MOLECULE_SER) {
         let data = to_vec(value, true).map_err(ser::Error::custom)?;
         serializer.serialize_bytes(&data)
     } else {
@@ -29,7 +29,7 @@ where
     D: Deserializer<'de>,
     T: DeserializeOwned,
 {
-    if core::any::type_name::<D>().contains(SERDE_MOLECULE_TYPE) {
+    if core::any::type_name::<D>().contains(MOLECULE_DE) {
         // This is a tricky approach: use this method to indicate that it is the top
         // level of the Molecule struct. When the inner `deserialize` is invoked, it
         // does not create a new instance. This ensures that the `index` status
