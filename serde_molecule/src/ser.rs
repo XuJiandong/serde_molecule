@@ -233,7 +233,7 @@ impl<'a> ser::Serializer for &'a mut MoleculeSerializer {
         _name: &'static str,
         len: usize,
     ) -> Result<Self::SerializeTupleStruct> {
-        Ok(Table::new(self, len, false))
+        Ok(Table::new(self, len, self.is_struct()))
     }
 
     fn serialize_tuple_variant(

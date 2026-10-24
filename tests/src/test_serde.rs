@@ -307,6 +307,57 @@ fn test_tuple_struct() {
     test_once(&nt);
 }
 
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+struct FixedTupleStruct(u8, u16);
+
+#[test]
+fn test_tuple_struct_fixed_layout() {
+    let value = FixedTupleStruct(42, 0x1234);
+    let bytes = to_vec(&value, true).unwrap();
+    assert_eq!(bytes, [42, 0x34, 0x12]);
+    assert_eq!(from_slice::<FixedTupleStruct>(&bytes, true).unwrap(), value);
+
+    let bytes = to_vec(&value, false).unwrap();
+    assert_eq!(
+        bytes,
+        [15, 0, 0, 0, 12, 0, 0, 0, 13, 0, 0, 0, 42, 0x34, 0x12]
+    );
+    assert_eq!(
+        from_slice::<FixedTupleStruct>(&bytes, false).unwrap(),
+        value
+    );
+}
+
+#[test]
+fn test_fixvec_of_tuple_structs() {
+    let value = vec![FixedTupleStruct(42, 0x1234), FixedTupleStruct(43, 0x5678)];
+    let bytes = to_vec(&value, false).unwrap();
+    assert_eq!(bytes, [2, 0, 0, 0, 42, 0x34, 0x12, 43, 0x78, 0x56]);
+    assert_eq!(
+        from_slice::<Vec<FixedTupleStruct>>(&bytes, false).unwrap(),
+        value
+    );
+}
+
+#[test]
+fn test_nested_fixed_tuple_struct() {
+    #[derive(Debug, PartialEq, Serialize, Deserialize)]
+    struct Nested(FixedTupleStruct, u8);
+
+    #[derive(Debug, PartialEq, Serialize, Deserialize)]
+    struct Table {
+        #[serde(with = "struct_serde")]
+        field: Nested,
+    }
+
+    let value = Table {
+        field: Nested(FixedTupleStruct(42, 0x1234), 43),
+    };
+    let bytes = to_vec(&value, false).unwrap();
+    assert_eq!(bytes, [12, 0, 0, 0, 8, 0, 0, 0, 42, 0x34, 0x12, 43]);
+    assert_eq!(from_slice::<Table>(&bytes, false).unwrap(), value);
+}
+
 #[derive(Serialize, Deserialize)]
 enum TupleVariant {
     TupleVariant1(u8, u16, String),
