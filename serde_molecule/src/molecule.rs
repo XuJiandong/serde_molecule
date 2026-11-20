@@ -90,6 +90,9 @@ pub fn unpack_number(data: &[u8], offset: usize) -> Result<usize, Error> {
 pub fn disassemble_fixvec(data: &[u8]) -> Result<Vec<&[u8]>, Error> {
     let item_count = unpack_number(data, 0)?;
     if item_count == 0 {
+        if data.len() != NUMBER_SIZE {
+            return Err(Error::InvalidFixvec);
+        }
         return Ok(vec![]);
     }
     let remaining = data.len().checked_sub(4).ok_or(Error::Overflow)?;

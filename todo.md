@@ -7,7 +7,7 @@ Reviewed commit `ecf4799`. Each item includes a regression check.
 - [x] **Decode array elements with the fixed layout.** Named and tuple structs now decode within each array element’s byte boundary. Regression tests cover top-level arrays, an array in a table field, and rejection of oversized elements. [Array reader](serde_molecule/src/de.rs#L393) · [Regression tests](tests/src/test_serde.rs#L332)
 - [x] **Decode optional fixed structs at the table field boundary.** The `struct_serde` adapter decodes an empty field as `None` and a present payload with the fixed layout. `test_table1` checks both cases against bytes from the generated Molecule builder. [Adapter](serde_molecule/src/struct_serde.rs#L27) · [Regression test](tests/src/simple.rs#L35)
 - [x] **Require fixed-layout values to consume their entire slice.** Top-level fixed values, annotated table fields, and fixed structs in arrays and fixvecs reject trailing bytes. Nested fields share the enclosing value’s cursor. [Fixed-layout reader](serde_molecule/src/struct_serde.rs#L82) · [Regression tests](tests/src/test_serde.rs#L314)
-- [ ] **Reject payloads on empty fixvecs.** The zero-count branch returns before checking the remaining length. Require exactly four bytes for a zero count. Cover both a valid empty vector and a zero count followed by an extra byte. [Fixvec decoder](serde_molecule/src/molecule.rs#L92)
+- [x] **Reject payloads on empty fixvecs.** A zero count requires exactly four bytes. The regression test covers the valid empty vector and a zero count followed by an extra byte. [Fixvec decoder](serde_molecule/src/molecule.rs#L92) · [Regression test](serde_molecule/src/tests.rs#L11)
 
 ## P2
 
