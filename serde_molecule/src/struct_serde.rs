@@ -29,19 +29,13 @@ where
     D: Deserializer<'de>,
     T: DeserializeOwned,
 {
-    if core::any::type_name::<D>().contains(MOLECULE_DE) {
-        // This is a tricky approach: use this method to indicate that it is the top
-        // level of the Molecule struct. When the inner `deserialize` is invoked, it
-        // does not create a new instance. This ensures that the `index` status
-        // propagates across the calling functions. When it is MoleculeDeserializer,
-        // it defaults to true, which is exactly what we want.
-        if deserializer.is_human_readable() {
-            let data = CollectData::deserialize(deserializer)?.data;
-            let mut de = MoleculeStructDeserializer::new(data);
-            T::deserialize(&mut de).map_err(de::Error::custom)
-        } else {
-            T::deserialize(deserializer)
-        }
+    if core::any::type_name::<D>().contains(MOLECULE_DE) && deserializer.is_human_readable() {
+        let data = CollectData::deserialize(deserializer)?.data;
+        MoleculeStructDeserializer::read_complete(data, |de| {
+            de.at_field_boundary = true;
+            T::deserialize(de)
+        })
+        .map_err(de::Error::custom)
     } else {
         T::deserialize(deserializer)
     }
@@ -80,11 +74,25 @@ impl<'de> Deserialize<'de> for CollectData {
 pub(crate) struct MoleculeStructDeserializer {
     data: Vec<u8>,
     index: usize,
+    // Only a complete table field has a length that can distinguish Some from None.
+    at_field_boundary: bool,
 }
 
 impl MoleculeStructDeserializer {
-    pub fn new(data: Vec<u8>) -> Self {
-        MoleculeStructDeserializer { data, index: 0 }
+    pub(crate) fn read_complete<T>(
+        data: impl Into<Vec<u8>>,
+        read: impl FnOnce(&mut Self) -> Result<T, Error>,
+    ) -> Result<T, Error> {
+        let mut de = Self {
+            data: data.into(),
+            index: 0,
+            at_field_boundary: false,
+        };
+        let value = read(&mut de)?;
+        if de.index != de.data.len() {
+            return Err(Error::MismatchedLength);
+        }
+        Ok(value)
     }
 }
 
@@ -241,7 +249,9 @@ impl<'de> Deserializer<'de> for &mut MoleculeStructDeserializer {
     where
         V: Visitor<'de>,
     {
-        visitor.visit_bytes(&self.data[self.index..])
+        let value = visitor.visit_bytes(&self.data[self.index..])?;
+        self.index = self.data.len();
+        Ok(value)
     }
     fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
@@ -250,11 +260,19 @@ impl<'de> Deserializer<'de> for &mut MoleculeStructDeserializer {
         self.deserialize_bytes(visitor)
     }
 
-    fn deserialize_option<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        Err(Error::InvalidStructField)
+        if !self.at_field_boundary {
+            return Err(Error::InvalidStructField);
+        }
+        self.at_field_boundary = false;
+        if self.data.is_empty() {
+            visitor.visit_none()
+        } else {
+            visitor.visit_some(self)
+        }
     }
 
     fn deserialize_unit<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
@@ -294,6 +312,7 @@ impl<'de> Deserializer<'de> for &mut MoleculeStructDeserializer {
     where
         V: Visitor<'de>,
     {
+        self.at_field_boundary = false;
         let access = ArrayAccess::new(self, len);
         visitor.visit_seq(access)
     }
@@ -326,6 +345,7 @@ impl<'de> Deserializer<'de> for &mut MoleculeStructDeserializer {
     where
         V: Visitor<'de>,
     {
+        self.at_field_boundary = false;
         visitor.visit_map(StructAccess::new(self, fields.len()))
     }
     fn deserialize_enum<V>(

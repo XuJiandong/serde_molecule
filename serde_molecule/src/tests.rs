@@ -11,6 +11,10 @@ fn test_disassemble_fixvec() {
     let data = [0u8; 4];
     let result = disassemble_fixvec(&data);
     assert_eq!(result.unwrap().len(), 0);
+    assert!(matches!(
+        disassemble_fixvec(&[0, 0, 0, 0, 0xff]),
+        Err(crate::Error::InvalidFixvec)
+    ));
     let data = [0x01, 0x00, 0x00, 0x00, 0x12];
     let result = disassemble_fixvec(&data);
     assert_eq!(result.unwrap().len(), 1);

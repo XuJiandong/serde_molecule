@@ -316,6 +316,7 @@ fn test_tuple_struct_fixed_layout() {
     let bytes = to_vec(&value, true).unwrap();
     assert_eq!(bytes, [42, 0x34, 0x12]);
     assert_eq!(from_slice::<FixedTupleStruct>(&bytes, true).unwrap(), value);
+    assert!(from_slice::<FixedTupleStruct>(&[42, 0x34, 0x12, 0], true).is_err());
 
     let bytes = to_vec(&value, false).unwrap();
     assert_eq!(
@@ -329,6 +330,40 @@ fn test_tuple_struct_fixed_layout() {
 }
 
 #[test]
+fn test_array_of_fixed_structs() {
+    #[derive(Debug, PartialEq, Serialize, Deserialize)]
+    struct Table {
+        pairs: [FixedTupleStruct; 2],
+    }
+
+    let pairs = [FixedTupleStruct(42, 0x1234), FixedTupleStruct(43, 0x5678)];
+    let bytes = to_vec(&pairs, false).unwrap();
+    assert_eq!(bytes, [42, 0x34, 0x12, 43, 0x78, 0x56]);
+    assert_eq!(
+        from_slice::<[FixedTupleStruct; 2]>(&bytes, false).unwrap(),
+        pairs
+    );
+
+    let table = Table { pairs };
+    let bytes = to_vec(&table, false).unwrap();
+    assert_eq!(from_slice::<Table>(&bytes, false).unwrap(), table);
+}
+
+#[test]
+fn test_array_of_named_structs() {
+    #[derive(Debug, PartialEq, Serialize, Deserialize)]
+    struct Point {
+        x: u16,
+        y: u8,
+    }
+
+    let points = [Point { x: 1, y: 2 }, Point { x: 3, y: 4 }];
+    let bytes = to_vec(&points, false).unwrap();
+    assert_eq!(from_slice::<[Point; 2]>(&bytes, false).unwrap(), points);
+    assert!(from_slice::<[Point; 2]>(&[1, 0, 2, 0, 3, 0, 4, 0], false).is_err());
+}
+
+#[test]
 fn test_fixvec_of_tuple_structs() {
     let value = vec![FixedTupleStruct(42, 0x1234), FixedTupleStruct(43, 0x5678)];
     let bytes = to_vec(&value, false).unwrap();
@@ -337,6 +372,9 @@ fn test_fixvec_of_tuple_structs() {
         from_slice::<Vec<FixedTupleStruct>>(&bytes, false).unwrap(),
         value
     );
+    // The count still divides the payload evenly, but each pair has a trailing byte.
+    let padded = [2, 0, 0, 0, 42, 0x34, 0x12, 0, 43, 0x78, 0x56, 0];
+    assert!(from_slice::<Vec<FixedTupleStruct>>(&padded, false).is_err());
 }
 
 #[test]
@@ -356,6 +394,45 @@ fn test_nested_fixed_tuple_struct() {
     let bytes = to_vec(&value, false).unwrap();
     assert_eq!(bytes, [12, 0, 0, 0, 8, 0, 0, 0, 42, 0x34, 0x12, 43]);
     assert_eq!(from_slice::<Table>(&bytes, false).unwrap(), value);
+    let padded = [13, 0, 0, 0, 8, 0, 0, 0, 42, 0x34, 0x12, 43, 0];
+    assert!(from_slice::<Table>(&padded, false).is_err());
+}
+
+#[test]
+fn test_fixed_layout_byte_visitor_consumes_remaining_slice() {
+    let (prefix, bytes) = from_slice::<(u8, struct_serde::CollectData)>(&[1, 2, 3], true).unwrap();
+    assert_eq!(prefix, 1);
+    assert_eq!(bytes.data, [2, 3]);
+}
+
+#[test]
+fn test_optional_fixed_struct_field_size() {
+    #[derive(Deserialize)]
+    struct Table {
+        #[serde(with = "struct_serde")]
+        pair: Option<FixedTupleStruct>,
+    }
+
+    // The table header is valid in both cases. The pair needs exactly three bytes.
+    assert!(from_slice::<Table>(&[10, 0, 0, 0, 8, 0, 0, 0, 42, 1], false).is_err());
+    assert!(from_slice::<Table>(&[12, 0, 0, 0, 8, 0, 0, 0, 42, 1, 0, 0], false).is_err());
+}
+
+#[test]
+fn test_option_inside_fixed_struct_is_rejected() {
+    #[derive(Deserialize)]
+    struct Fixed {
+        first: Option<u8>,
+        second: u8,
+    }
+
+    #[derive(Deserialize)]
+    struct Table {
+        #[serde(with = "struct_serde")]
+        field: Fixed,
+    }
+
+    assert!(from_slice::<Table>(&[10, 0, 0, 0, 8, 0, 0, 0, 1, 2], false).is_err());
 }
 
 #[derive(Serialize, Deserialize)]
