@@ -66,6 +66,20 @@ fn test_table1() {
     let old = old_value.as_slice();
     let new = to_vec(&new_value, false).unwrap();
     assert_eq!(old, new.as_slice());
+    assert_eq!(from_slice::<NewTable1>(old, false).unwrap(), new_value);
+
+    let old_value = old_value
+        .as_builder()
+        .struct1_opt(Default::default())
+        .build();
+    let new_value = NewTable1 {
+        struct1_opt: None,
+        ..new_value
+    };
+    assert_eq!(
+        from_slice::<NewTable1>(old_value.as_slice(), false).unwrap(),
+        new_value
+    );
 }
 
 #[test]

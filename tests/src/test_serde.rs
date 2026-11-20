@@ -392,6 +392,36 @@ fn test_nested_fixed_tuple_struct() {
     assert_eq!(from_slice::<Table>(&bytes, false).unwrap(), value);
 }
 
+#[test]
+fn test_optional_fixed_struct_field_size() {
+    #[derive(Deserialize)]
+    struct Table {
+        #[serde(with = "struct_serde")]
+        pair: Option<FixedTupleStruct>,
+    }
+
+    // The table header is valid in both cases. The pair needs exactly three bytes.
+    assert!(from_slice::<Table>(&[10, 0, 0, 0, 8, 0, 0, 0, 42, 1], false).is_err());
+    assert!(from_slice::<Table>(&[12, 0, 0, 0, 8, 0, 0, 0, 42, 1, 0, 0], false).is_err());
+}
+
+#[test]
+fn test_option_inside_fixed_struct_is_rejected() {
+    #[derive(Deserialize)]
+    struct Fixed {
+        first: Option<u8>,
+        second: u8,
+    }
+
+    #[derive(Deserialize)]
+    struct Table {
+        #[serde(with = "struct_serde")]
+        field: Fixed,
+    }
+
+    assert!(from_slice::<Table>(&[10, 0, 0, 0, 8, 0, 0, 0, 1, 2], false).is_err());
+}
+
 #[derive(Serialize, Deserialize)]
 enum TupleVariant {
     TupleVariant1(u8, u16, String),
