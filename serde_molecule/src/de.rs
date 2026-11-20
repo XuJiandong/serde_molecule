@@ -22,9 +22,7 @@ where
     T: de::Deserialize<'a>,
 {
     if is_struct {
-        let mut de = MoleculeStructDeserializer::new(v.to_vec());
-        let value = de::Deserialize::deserialize(&mut de)?;
-        Ok(value)
+        MoleculeStructDeserializer::read_complete(v, |de| T::deserialize(de))
     } else {
         let mut de = MoleculeDeserializer::new(v);
         let value = de::Deserialize::deserialize(&mut de)?;
@@ -431,8 +429,7 @@ impl<'de> de::SeqAccess<'de> for FixvecAccess<'de, '_> {
             let part = self.parts[self.current_index];
             self.current_index += 1;
             // elements in fixvec should be fixed(struct, primitive type, etc)
-            let mut de = MoleculeStructDeserializer::new(part.to_vec());
-            let value = seed.deserialize(&mut de)?;
+            let value = MoleculeStructDeserializer::read_complete(part, |de| seed.deserialize(de))?;
             Ok(Some(value))
         } else {
             Ok(None)

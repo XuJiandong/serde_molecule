@@ -31,9 +31,11 @@ where
 {
     if core::any::type_name::<D>().contains(MOLECULE_DE) && deserializer.is_human_readable() {
         let data = CollectData::deserialize(deserializer)?.data;
-        let mut de = MoleculeStructDeserializer::new(data);
-        de.at_field_boundary = true;
-        T::deserialize(&mut de).map_err(de::Error::custom)
+        MoleculeStructDeserializer::read_complete(data, |de| {
+            de.at_field_boundary = true;
+            T::deserialize(de)
+        })
+        .map_err(de::Error::custom)
     } else {
         T::deserialize(deserializer)
     }
@@ -77,29 +79,20 @@ pub(crate) struct MoleculeStructDeserializer {
 }
 
 impl MoleculeStructDeserializer {
-    pub fn new(data: Vec<u8>) -> Self {
-        MoleculeStructDeserializer {
-            data,
-            index: 0,
-            at_field_boundary: false,
-        }
-    }
-
     pub(crate) fn read_complete<T>(
-        data: &[u8],
+        data: impl Into<Vec<u8>>,
         read: impl FnOnce(&mut Self) -> Result<T, Error>,
     ) -> Result<T, Error> {
-        let mut de = Self::new(data.to_vec());
+        let mut de = Self {
+            data: data.into(),
+            index: 0,
+            at_field_boundary: false,
+        };
         let value = read(&mut de)?;
-        de.ensure_end()?;
-        Ok(value)
-    }
-
-    fn ensure_end(&self) -> Result<(), Error> {
-        if self.index != self.data.len() {
+        if de.index != de.data.len() {
             return Err(Error::MismatchedLength);
         }
-        Ok(())
+        Ok(value)
     }
 }
 
@@ -256,7 +249,9 @@ impl<'de> Deserializer<'de> for &mut MoleculeStructDeserializer {
     where
         V: Visitor<'de>,
     {
-        visitor.visit_bytes(&self.data[self.index..])
+        let value = visitor.visit_bytes(&self.data[self.index..])?;
+        self.index = self.data.len();
+        Ok(value)
     }
     fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
@@ -276,9 +271,7 @@ impl<'de> Deserializer<'de> for &mut MoleculeStructDeserializer {
         if self.data.is_empty() {
             visitor.visit_none()
         } else {
-            let value = visitor.visit_some(&mut *self)?;
-            self.ensure_end()?;
-            Ok(value)
+            visitor.visit_some(self)
         }
     }
 
