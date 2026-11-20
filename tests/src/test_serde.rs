@@ -329,6 +329,40 @@ fn test_tuple_struct_fixed_layout() {
 }
 
 #[test]
+fn test_array_of_fixed_structs() {
+    #[derive(Debug, PartialEq, Serialize, Deserialize)]
+    struct Table {
+        pairs: [FixedTupleStruct; 2],
+    }
+
+    let pairs = [FixedTupleStruct(42, 0x1234), FixedTupleStruct(43, 0x5678)];
+    let bytes = to_vec(&pairs, false).unwrap();
+    assert_eq!(bytes, [42, 0x34, 0x12, 43, 0x78, 0x56]);
+    assert_eq!(
+        from_slice::<[FixedTupleStruct; 2]>(&bytes, false).unwrap(),
+        pairs
+    );
+
+    let table = Table { pairs };
+    let bytes = to_vec(&table, false).unwrap();
+    assert_eq!(from_slice::<Table>(&bytes, false).unwrap(), table);
+}
+
+#[test]
+fn test_array_of_named_structs() {
+    #[derive(Debug, PartialEq, Serialize, Deserialize)]
+    struct Point {
+        x: u16,
+        y: u8,
+    }
+
+    let points = [Point { x: 1, y: 2 }, Point { x: 3, y: 4 }];
+    let bytes = to_vec(&points, false).unwrap();
+    assert_eq!(from_slice::<[Point; 2]>(&bytes, false).unwrap(), points);
+    assert!(from_slice::<[Point; 2]>(&[1, 0, 2, 0, 3, 0, 4, 0], false).is_err());
+}
+
+#[test]
 fn test_fixvec_of_tuple_structs() {
     let value = vec![FixedTupleStruct(42, 0x1234), FixedTupleStruct(43, 0x5678)];
     let bytes = to_vec(&value, false).unwrap();

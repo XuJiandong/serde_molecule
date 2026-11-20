@@ -35,11 +35,16 @@ where
 /// A structure that deserializes molecule into Rust values.
 pub struct MoleculeDeserializer<'de> {
     data: &'de [u8],
+    // Array elements encode named and tuple structs without a table header.
+    fixed_structs: bool,
 }
 
 impl<'de> MoleculeDeserializer<'de> {
     pub fn new(data: &'de [u8]) -> Self {
-        MoleculeDeserializer { data }
+        MoleculeDeserializer {
+            data,
+            fixed_structs: false,
+        }
     }
 }
 
@@ -267,13 +272,18 @@ impl<'de> de::Deserializer<'de> for &mut MoleculeDeserializer<'de> {
     }
     fn deserialize_tuple_struct<V>(
         self,
-        _name: &'static str,
+        name: &'static str,
         len: usize,
         visitor: V,
     ) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
+        if self.fixed_structs {
+            return MoleculeStructDeserializer::read_complete(self.data, |de| {
+                de.deserialize_tuple_struct(name, len, visitor)
+            });
+        }
         let mut access = TableAccess::new(self, len);
         access.parse()?;
         visitor.visit_seq(access)
@@ -301,6 +311,10 @@ impl<'de> de::Deserializer<'de> for &mut MoleculeDeserializer<'de> {
             let mut access = DynvecAccess::new(self);
             access.parse()?;
             visitor.visit_map(access)
+        } else if self.fixed_structs {
+            MoleculeStructDeserializer::read_complete(self.data, |de| {
+                de.deserialize_struct(name, fields, visitor)
+            })
         } else {
             let mut access = TableAccess::new(self, fields.len());
             access.parse()?;
@@ -374,7 +388,10 @@ impl<'de> de::SeqAccess<'de> for ArrayAccess<'de, '_> {
             let part = &self.de.data
                 [self.current_index * self.item_size..(self.current_index + 1) * self.item_size];
             self.current_index += 1;
-            let mut de = MoleculeDeserializer::new(part);
+            let mut de = MoleculeDeserializer {
+                data: part,
+                fixed_structs: true,
+            };
             let value = seed.deserialize(&mut de)?;
             Ok(Some(value))
         } else {

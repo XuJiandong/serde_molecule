@@ -86,6 +86,18 @@ impl MoleculeStructDeserializer {
     pub fn new(data: Vec<u8>) -> Self {
         MoleculeStructDeserializer { data, index: 0 }
     }
+
+    pub(crate) fn read_complete<T>(
+        data: &[u8],
+        read: impl FnOnce(&mut Self) -> Result<T, Error>,
+    ) -> Result<T, Error> {
+        let mut de = Self::new(data.to_vec());
+        let value = read(&mut de)?;
+        if de.index != data.len() {
+            return Err(Error::MismatchedLength);
+        }
+        Ok(value)
+    }
 }
 
 macro_rules! read_primitive {
